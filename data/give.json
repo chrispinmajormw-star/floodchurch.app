@@ -1,0 +1,12 @@
+{
+  "verse": "\"God loves a cheerful giver.\" — 2 Corinthians 9:7",
+  "funds": [
+    { "id": "tithe", "name": "Tithe", "desc": "Honour God with the first tenth." },
+    { "id": "offering", "name": "Offering", "desc": "A free-will gift of worship." },
+    { "id": "building", "name": "Building Fund", "desc": "Raising the house of God." },
+    { "id": "missions", "name": "Missions", "desc": "Take the gospel further." }
+  ],
+  "amounts": [2000, 5000, 10000, 20000],
+  "defaultAmount": 5000,
+  "paymentMethods": ["Mpamba", "Airtel Money", "Bank Transfer"]
+}

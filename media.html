@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Media — Flood Church</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar" id="topbar"></header>
+
+  <div class="page">
+    <h1 class="page-title">Media</h1>
+    <p class="page-sub">Everything Flood — watch, listen and grow.</p>
+
+    <div id="media-tiles"></div>
+
+    <h2 class="section-title">Podcasts</h2>
+    <div class="card" style="padding: 6px 16px;" id="podcasts"></div>
+  </div>
+
+  <nav class="bottomnav" id="bottomnav"></nav>
+</div>
+
+<script type="module">
+  import { renderMedia } from "./js/components/media.js";
+  renderMedia();
+</script>
+</body>
+</html>

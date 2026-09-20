@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Settings — Flood Church</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar" id="topbar"></header>
+
+  <div class="page">
+    <div class="settings-group">
+      <p class="group-label">Account</p>
+      <div id="account-group"></div>
+    </div>
+
+    <div class="settings-group">
+      <p class="group-label">Notifications</p>
+      <div id="notifications-group"></div>
+    </div>
+
+    <div class="settings-group">
+      <p class="group-label">Media &amp; downloads</p>
+      <div id="media-group"></div>
+    </div>
+
+    <div class="settings-group">
+      <p class="group-label">Appearance</p>
+      <div id="appearance-group"></div>
+    </div>
+
+    <div class="settings-group">
+      <p class="group-label">Support</p>
+      <div id="support-group"></div>
+    </div>
+
+    <div class="settings-group">
+      <p class="group-label">Account actions</p>
+      <div class="list-row" id="delete-account">
+        <div class="row-body"><p class="row-title danger-row">Delete my account</p></div>
+      </div>
+    </div>
+
+    <button class="logout-btn" id="logout-btn">Log out</button>
+    <p class="app-version" id="app-version"></p>
+  </div>
+
+  <nav class="bottomnav" id="bottomnav"></nav>
+</div>
+
+<script type="module">
+  import { renderSettings } from "./js/components/settings.js";
+  renderSettings();
+</script>
+</body>
+</html>

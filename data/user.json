@@ -1,0 +1,18 @@
+{
+  "name": "Gideon",
+  "memberId": "FLD-2026-0148",
+  "group": "Kingdom Culture",
+  "team": "Media Team",
+  "avatarInitial": "G",
+  "stats": {
+    "given": "MWK 40k",
+    "saved": 12,
+    "plans": 3
+  },
+  "ministries": [
+    { "name": "Youth", "leader": "Pastor Grace Banda" },
+    { "name": "Children", "leader": "Aunt Mphatso" },
+    { "name": "Women", "leader": "Mama Flood" },
+    { "name": "Men", "leader": "Elder Joseph" }
+  ]
+}

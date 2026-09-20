@@ -1,0 +1,25 @@
+{
+  "account": [
+    { "title": "Edit profile", "sub": "Name, photo, member ID", "icon": "user" },
+    { "title": "Change password", "sub": "", "icon": "lock" },
+    { "title": "Manage payment methods", "sub": "Mpamba, Airtel Money, bank", "icon": "receipt" }
+  ],
+  "notifications": [
+    { "title": "Live service alerts", "sub": "Notify when Flood goes live", "on": true },
+    { "title": "Daily verse", "sub": "A reminder each morning", "on": true },
+    { "title": "Giving receipts", "sub": "Email a receipt after each gift", "on": false },
+    { "title": "Ministry updates", "sub": "News from your ministries", "on": true }
+  ],
+  "media": [
+    { "title": "Download over Wi-Fi only", "sub": "Save your mobile data", "on": true },
+    { "title": "Auto-play next sermon", "sub": "", "on": false }
+  ],
+  "appearance": [
+    { "title": "Dark mode", "sub": "Flood always looks best in dark", "on": true }
+  ],
+  "support": [
+    { "title": "Help & FAQ", "icon": "help" },
+    { "title": "Contact the church office", "icon": "mail" }
+  ],
+  "version": "Flood Church · v1.0.0"
+}

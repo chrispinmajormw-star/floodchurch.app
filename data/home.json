@@ -1,0 +1,21 @@
+{
+  "hero": {
+    "tag": "LIVE SUNDAY",
+    "headline": "Bringing upcoming generations to Christ for transformation."
+  },
+  "service": {
+    "days": ["Sunday 9:00 am", "Sunday 11:00 am"],
+    "address": "Kaunda Street, Area 47, Opposite Gateway Mall, Lilongwe",
+    "nextServiceHour": 9
+  },
+  "quickActions": [
+    { "label": "Prayer", "icon": "pray", "link": "#" },
+    { "label": "Events", "icon": "calendar", "link": "#" },
+    { "label": "Give", "icon": "heart", "link": "give.html" },
+    { "label": "Podcast", "icon": "podcast", "link": "media.html" }
+  ],
+  "verseOfDay": {
+    "text": "Behold, I will do a new thing, now it shall spring forth; shall ye not know it?",
+    "reference": "Isaiah 43:19"
+  }
+}

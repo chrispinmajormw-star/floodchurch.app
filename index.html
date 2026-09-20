@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flood Church</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar" id="topbar"></header>
+
+  <div class="page">
+    <p class="greeting">Good evening,</p>
+    <p class="greeting-name" id="user-name">&nbsp;</p>
+
+    <div class="hero">
+      <span class="live-tag"><span class="dot"></span><span id="hero-tag"></span></span>
+      <h3 id="hero-headline"></h3>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="location.href='media.html'">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          Watch live
+        </button>
+        <a class="btn btn-ghost" href="media.html">
+          Media
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="next-service">
+      <div class="label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Next service in
+      </div>
+      <div class="countdown" id="countdown">&mdash;</div>
+      <div class="service-meta" id="service-meta"></div>
+    </div>
+
+    <div class="quick-grid" id="quick-grid"></div>
+
+    <div class="verse-box">
+      <div class="eyebrow">VERSE OF THE DAY</div>
+      <p id="verse-text"></p>
+    </div>
+  </div>
+
+  <nav class="bottomnav" id="bottomnav"></nav>
+</div>
+
+<script type="module">
+  import { renderHome } from "./js/components/home.js";
+  renderHome();
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Profile — Flood Church</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar" id="topbar"></header>
+
+  <div class="page">
+    <div class="profile-head">
+      <div class="avatar" id="avatar"></div>
+      <div>
+        <h2 id="profile-name"></h2>
+        <p class="member-id" id="member-id"></p>
+        <p class="tag-line" id="tag-line"></p>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><b id="stat-given"></b><span>Given</span></div>
+      <div class="stat"><b id="stat-saved"></b><span>Saved</span></div>
+      <div class="stat"><b id="stat-plans"></b><span>Plans</span></div>
+    </div>
+
+    <div id="profile-list"></div>
+
+    <h2 class="section-title">My ministries</h2>
+    <div class="ministry-grid" id="ministry-grid"></div>
+  </div>
+
+  <nav class="bottomnav" id="bottomnav"></nav>
+</div>
+
+<script type="module">
+  import { renderProfile } from "./js/components/profile.js";
+  renderProfile();
+</script>
+</body>
+</html>
