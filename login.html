@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sign In — Flood Church</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <div class="auth-page">
+    <div class="auth-brand">
+      <div class="mark">F</div>
+      <div class="word"><b>FLOOD</b><span>CHURCH</span></div>
+    </div>
+
+    <h1>Welcome back</h1>
+    <p class="auth-sub">Sign in to give, save sermons, and track your reading plans.</p>
+
+    <div class="auth-error" id="auth-error"></div>
+
+    <form id="login-form">
+      <div class="auth-field">
+        <label for="email">Email</label>
+        <input class="auth-input" type="email" id="email" required autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label for="password">Password</label>
+        <input class="auth-input" type="password" id="password" required autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary auth-submit" type="submit" id="submit-btn">Sign in</button>
+    </form>
+
+    <p class="auth-switch">New here? <a href="signup.html">Create an account</a></p>
+  </div>
+</div>
+
+<script type="module">
+  import { signIn } from "./js/auth.js";
+  import { supabase } from "./js/supabaseClient.js";
+
+  // Already signed in? Skip straight to the app.
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) location.href = "index.html";
+  });
+
+  const form = document.getElementById("login-form");
+  const errorBox = document.getElementById("auth-error");
+  const submitBtn = document.getElementById("submit-btn");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorBox.classList.remove("show");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Signing in…";
+    try {
+      await signIn(email.value.trim(), password.value);
+      location.href = "index.html";
+    } catch (err) {
+      errorBox.textContent = err.message || "Couldn't sign in. Check your details and try again.";
+      errorBox.classList.add("show");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Sign in";
+    }
+  });
+</script>
+</body>
+</html>
