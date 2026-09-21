@@ -1,0 +1,28 @@
+{
+  "faqs": [
+    {
+      "q": "How do I give my tithe or offering?",
+      "a": "Go to the Give tab, choose a fund (Tithe, Offering, Building Fund, or Missions), pick or enter an amount, choose a payment method, then tap Give. Your gift is recorded under Profile \u2192 Giving history."
+    },
+    {
+      "q": "Can I change my password?",
+      "a": "Yes \u2014 go to Profile \u2192 Settings \u2192 Change password, enter your new password twice, and tap Update password."
+    },
+    {
+      "q": "How do I save a sermon to watch later?",
+      "a": "On the Home page, under Recent Sermons, tap the bookmark icon on any sermon thumbnail. Find your saved sermons anytime under Profile \u2192 Saved sermons."
+    },
+    {
+      "q": "Where do my prayer requests go?",
+      "a": "Requests submitted under Profile \u2192 Prayer requests are sent to our prayer team, who pray over every submission. You can see your own request history on that same page."
+    },
+    {
+      "q": "Can I delete my account?",
+      "a": "Yes. Go to Profile \u2192 Settings, scroll to Account actions, and tap Delete my account. This permanently removes your profile, giving history, prayer requests, saved sermons and downloads \u2014 it can't be undone."
+    },
+    {
+      "q": "How do I switch between light and dark mode?",
+      "a": "Go to Profile \u2192 Settings \u2192 Appearance, and choose Dark or Light, plus an accent color. Your choice is saved on this device."
+    }
+  ]
+}

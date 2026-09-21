@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("flood-theme") || "dark";
+      var a = localStorage.getItem("flood-accent") || "#3b82f6";
+      document.documentElement.setAttribute("data-theme", t);
+      document.documentElement.style.setProperty("--blue", a);
+    } catch (e) {}
+  })();
+</script>
+<title>Help & FAQ — Flood Church</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar" id="topbar"></header>
+
+  <div class="page">
+    <h1 class="page-title">Help &amp; FAQ</h1>
+    <p class="page-sub">Common questions about using the app.</p>
+
+    <div id="faq-list"></div>
+
+    <h2 class="section-title">Still stuck?</h2>
+    <div class="card">
+      <p style="color:var(--text-dim); font-size:14px; line-height:1.6; margin:0 0 14px;">
+        Reach out to the church office and we'll help you sort it out.
+      </p>
+      <a class="btn btn-primary" href="mailto:office@floodchurch.org" style="width:100%; justify-content:center;">Email the office</a>
+    </div>
+  </div>
+
+  <nav class="bottomnav" id="bottomnav"></nav>
+</div>
+
+<script type="module">
+  import { renderHelp } from "./js/components/help.js";
+  renderHelp();
+</script>
+</body>
+</html>
