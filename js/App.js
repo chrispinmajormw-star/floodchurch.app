@@ -2,6 +2,7 @@
 // Every page imports this to get the top bar, bottom navigation,
 // and a small helper for loading this page's JSON data.
 import { ICONS } from "./icons.js";
+import { applyTheme } from "./theme.js";
 
 const NAV_ITEMS = [
   { href: "index.html", label: "Home", icon: "home" },
@@ -43,7 +44,7 @@ export function renderTopbar({ rightIcon = "bell", rightHref = "#", back = false
   const left = back
     ? `<a class="icon-btn" href="${backHref}" aria-label="Back">${ICONS.back}</a>`
     : `<div class="brand">
-         <div class="mark">F</div>
+         <div class="mark"><img src="assets/floodwhite.svg" alt="Flood Church logo"></div>
          <div class="word"><b>FLOOD</b><span>CHURCH</span></div>
        </div>`;
 
@@ -67,6 +68,7 @@ export async function loadData(path) {
 
 /** Boots the shared chrome (topbar + bottom nav). Call once per page. */
 export function bootApp(topbarOptions) {
+  applyTheme();
   renderTopbar(topbarOptions);
   renderBottomNav();
 }
