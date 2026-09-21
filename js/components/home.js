@@ -1,6 +1,8 @@
-// components/home.js — renders the Home page from data/home.json + data/user.json
+// components/home.js — renders the Home page from data/home.json + live Supabase data
 import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
+import { requireAuth } from "../auth.js";
+import { supabase } from "../supabaseClient.js";
 
 function nextServiceDate(hour) {
   const now = new Date();
@@ -26,15 +28,27 @@ function startCountdown(hour) {
   setInterval(tick, 1000);
 }
 
+function greetingForHour() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning,";
+  if (h < 17) return "Good afternoon,";
+  return "Good evening,";
+}
+
 export async function renderHome() {
+  const authUser = await requireAuth();
+  if (!authUser) return; // requireAuth already redirected to login.html
+
   bootApp({ rightIcon: "bell" });
 
-  const [home, user] = await Promise.all([
+  const [home, profile] = await Promise.all([
     loadData("data/home.json"),
-    loadData("data/user.json"),
+    supabase.from("profiles").select("name").eq("id", authUser.id).maybeSingle(),
   ]);
 
-  document.getElementById("user-name").textContent = user.name;
+  const displayName = profile.data?.name || authUser.email.split("@")[0];
+  document.getElementById("user-name").textContent = displayName;
+  document.getElementById("greeting-text").textContent = greetingForHour();
 
   const quickGrid = document.getElementById("quick-grid");
   quickGrid.innerHTML = home.quickActions
