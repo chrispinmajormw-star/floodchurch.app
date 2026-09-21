@@ -1,8 +1,12 @@
 // components/media.js — renders the Media page from data/media.json
 import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
+import { requireAuth } from "../auth.js";
 
 export async function renderMedia() {
+  const authUser = await requireAuth();
+  if (!authUser) return;
+
   bootApp({ rightIcon: "bell" });
 
   const data = await loadData("data/media.json");
