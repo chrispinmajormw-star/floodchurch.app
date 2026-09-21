@@ -3,6 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+  // Apply saved theme/accent immediately, before first paint, to avoid a flash of the default theme.
+  (function () {
+    try {
+      var t = localStorage.getItem("flood-theme") || "dark";
+      var a = localStorage.getItem("flood-accent") || "#3b82f6";
+      document.documentElement.setAttribute("data-theme", t);
+      document.documentElement.style.setProperty("--blue", a);
+    } catch (e) {}
+  })();
+</script>
 <title>Flood Church</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
