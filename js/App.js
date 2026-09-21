@@ -44,7 +44,7 @@ export function renderTopbar({ rightIcon = "bell", rightHref = "#", back = false
   const left = back
     ? `<a class="icon-btn" href="${backHref}" aria-label="Back">${ICONS.back}</a>`
     : `<div class="brand">
-         <div class="mark"><img src="assets/floodwhite.svg" alt="Flood Church logo"></div>
+         <div class="mark"><img src="assets/floodwhite.svg" alt="Flood Church logo" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'F'}))"></div>
          <div class="word"><b>FLOOD</b><span>CHURCH</span></div>
        </div>`;
 
