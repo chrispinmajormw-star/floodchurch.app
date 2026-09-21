@@ -1,16 +1,16 @@
 // components/profile.js — renders the Profile page from the signed-in user's
-// Supabase profile + activity, plus the church's static ministry directory.
-import { bootApp, loadData } from "../App.js";
+// Supabase profile + activity, plus the church's ministries table.
+import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 
 const LIST_ROWS = [
-  { key: "giving", title: "Giving history", icon: "heart" },
-  { key: "prayer", title: "Prayer requests", icon: "pray" },
-  { key: "sermons", title: "Saved sermons", icon: "bookmark" },
-  { key: "downloads", title: "Downloads", icon: "downloads" },
-  { key: "ministries", title: "Ministries", icon: "ministries" },
+  { key: "giving", title: "Giving history", icon: "heart", href: "giving-history.html" },
+  { key: "prayer", title: "Prayer requests", icon: "pray", href: "prayer.html" },
+  { key: "sermons", title: "Saved sermons", icon: "bookmark", href: "saved-sermons.html" },
+  { key: "downloads", title: "Downloads", icon: "downloads", href: "downloads.html" },
+  { key: "ministries", title: "Ministries", icon: "ministries", href: "#" },
 ];
 
 function formatMWK(amount) {
@@ -24,11 +24,12 @@ export async function renderProfile() {
 
   bootApp({ rightIcon: "gear", rightHref: "settings.html" });
 
-  const [directory, profileRes, giftsRes, sermonsRes] = await Promise.all([
-    loadData("data/user.json"), // static church directory (ministries + leaders)
+  const [ministriesRes, profileRes, giftsRes, sermonsRes, plansRes] = await Promise.all([
+    supabase.from("ministries").select("*").order("sort_order"),
     supabase.from("profiles").select("*").eq("id", authUser.id).maybeSingle(),
     supabase.from("gifts").select("amount").eq("user_id", authUser.id),
     supabase.from("saved_sermons").select("id", { count: "exact", head: true }).eq("user_id", authUser.id),
+    supabase.from("reading_plan_progress").select("id").eq("user_id", authUser.id).gt("percent", 0),
   ]);
 
   const profile = profileRes.data || {
@@ -51,20 +52,20 @@ export async function renderProfile() {
 
   document.getElementById("stat-given").textContent = formatMWK(totalGiven);
   document.getElementById("stat-saved").textContent = savedCount;
-  document.getElementById("stat-plans").textContent = "0"; // wire to a reading_plans table when that's built
+  document.getElementById("stat-plans").textContent = plansRes.data?.length ?? 0;
 
   const listMount = document.getElementById("profile-list");
   listMount.innerHTML = LIST_ROWS.map(
     (row) => `
-    <div class="list-row">
+    <a class="list-row" href="${row.href}">
       <div class="row-icon">${ICONS[row.icon]}</div>
       <div class="row-body"><p class="row-title">${row.title}</p></div>
       <div class="chevron">${ICONS.chevron}</div>
-    </div>`
+    </a>`
   ).join("");
 
   const ministryMount = document.getElementById("ministry-grid");
-  ministryMount.innerHTML = directory.ministries
+  ministryMount.innerHTML = (ministriesRes.data || [])
     .map(
       (m) => `<div class="ministry-pill"><b>${m.name}</b> &middot; ${m.leader}</div>`
     )
