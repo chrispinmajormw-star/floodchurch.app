@@ -1020,3 +1020,41 @@ h2.section-title {
   border: 2px solid var(--text);
   border-radius: 50%;
 }
+
+/* Help & FAQ — accordion */
+.faq-item { padding: 4px 16px; }
+.faq-question {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.faq-chevron {
+  flex-shrink: 0;
+  color: var(--text-faint);
+  display: flex;
+  transition: transform 0.2s ease;
+}
+.faq-chevron svg { width: 16px; height: 16px; }
+.faq-item.open .faq-chevron { transform: rotate(90deg); }
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 13.5px;
+  line-height: 1.6;
+  transition: max-height 0.2s ease;
+}
+.faq-item.open .faq-answer {
+  max-height: 400px;
+  padding-bottom: 16px;
+}
