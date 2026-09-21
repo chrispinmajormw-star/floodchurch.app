@@ -63,9 +63,6 @@
   const form = document.getElementById("signup-form");
   const errorBox = document.getElementById("auth-error");
   const submitBtn = document.getElementById("submit-btn");
-  const nameInput = document.getElementById("name");
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -74,9 +71,9 @@
     submitBtn.textContent = "Creating account…";
     try {
       const result = await signUp({
-        email: emailInput.value.trim(),
-        password: passwordInput.value,
-        name: nameInput.value.trim(),
+        email: email.value.trim(),
+        password: password.value,
+        name: name.value.trim(),
       });
       if (result.session) {
         // Email confirmation is off — go straight in.
