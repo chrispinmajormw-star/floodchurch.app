@@ -1,7 +1,11 @@
 // components/bible.js — renders the Bible page from data/bible.json
 import { bootApp, loadData } from "../App.js";
+import { requireAuth } from "../auth.js";
 
 export async function renderBible() {
+  const authUser = await requireAuth();
+  if (!authUser) return;
+
   bootApp({ rightIcon: "bookmark" });
 
   const data = await loadData("data/bible.json");
