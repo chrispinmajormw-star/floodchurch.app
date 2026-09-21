@@ -1,6 +1,7 @@
 // components/settings.js — renders the Settings page from data/settings.json
 import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
+import { requireAuth, signOut } from "../auth.js";
 
 function accountRow(item) {
   return `
@@ -35,6 +36,9 @@ function supportRow(item) {
 }
 
 export async function renderSettings() {
+  const authUser = await requireAuth();
+  if (!authUser) return;
+
   bootApp({ back: true, backHref: "profile.html", rightIcon: null, title: "Settings" });
 
   const data = await loadData("data/settings.json");
@@ -50,8 +54,8 @@ export async function renderSettings() {
     el.addEventListener("click", () => el.classList.toggle("on"));
   });
 
-  document.getElementById("logout-btn").addEventListener("click", () => {
-    alert("Signed out. (Demo only.)");
+  document.getElementById("logout-btn").addEventListener("click", async () => {
+    await signOut(); // redirects to login.html
   });
 
   document.getElementById("delete-account").addEventListener("click", () => {
