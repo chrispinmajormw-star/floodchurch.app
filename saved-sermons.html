@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Saved Sermons — Flood Church</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar" id="topbar"></header>
+
+  <div class="page">
+    <h1 class="page-title">Saved sermons</h1>
+    <p class="page-sub">Sermons you've bookmarked to watch or listen to later.</p>
+
+    <div id="saved-list"></div>
+    <p id="saved-empty" style="display:none; color: var(--text-dim); font-size: 14px;">
+      Nothing saved yet. Tap the bookmark on any sermon on the Home page to add it here.
+    </p>
+  </div>
+
+  <nav class="bottomnav" id="bottomnav"></nav>
+</div>
+
+<script type="module">
+  import { renderSavedSermons } from "./js/components/saved-sermons.js";
+  renderSavedSermons();
+</script>
+</body>
+</html>

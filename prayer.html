@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prayer Requests — Flood Church</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar" id="topbar"></header>
+
+  <div class="page">
+    <h1 class="page-title">Prayer requests</h1>
+    <p class="page-sub">Share what's on your heart. Our prayer team reads every one.</p>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <form id="prayer-form">
+        <textarea id="prayer-content" class="amount-input" style="border-radius: var(--radius-md); min-height: 100px; resize: vertical; font-weight: 400; font-size: 14.5px;" placeholder="Type your prayer request…" required></textarea>
+        <button class="btn btn-primary" type="submit" id="prayer-submit" style="width:100%; margin-top: 12px; padding: 14px;">Send request</button>
+      </form>
+    </div>
+
+    <h2 class="section-title" style="margin-top:0;">Your requests</h2>
+    <div id="prayer-list"></div>
+    <p id="prayer-empty" style="display:none; color: var(--text-dim); font-size: 14px;">No prayer requests yet — your first one will show up here.</p>
+  </div>
+
+  <nav class="bottomnav" id="bottomnav"></nav>
+</div>
+
+<script type="module">
+  import { renderPrayer } from "./js/components/prayer.js";
+  renderPrayer();
+</script>
+</body>
+</html>

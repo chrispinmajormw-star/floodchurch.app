@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Giving History — Flood Church</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar" id="topbar"></header>
+
+  <div class="page">
+    <h1 class="page-title">Giving history</h1>
+    <p class="page-sub" id="giving-total"></p>
+
+    <div id="giving-list"></div>
+    <p id="giving-empty" style="display:none; color: var(--text-dim); font-size: 14px;">
+      No gifts recorded yet. Head to Give to make your first one.
+    </p>
+  </div>
+
+  <nav class="bottomnav" id="bottomnav"></nav>
+</div>
+
+<script type="module">
+  import { renderGivingHistory } from "./js/components/giving-history.js";
+  renderGivingHistory();
+</script>
+</body>
+</html>
