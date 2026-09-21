@@ -17,5 +17,52 @@
   "verseOfDay": {
     "text": "Behold, I will do a new thing, now it shall spring forth; shall ye not know it?",
     "reference": "Isaiah 43:19"
-  }
+  },
+  "devotion": {
+    "title": "The Power Of A Transformed Life",
+    "reference": "Romans 12:2 (NKJV)",
+    "text": "And do not be conformed to this world, but be transformed by the renewing of your mind, that you may prove what is that good and acceptable a...",
+    "date": "3 Aug, 2026",
+    "tag": "Transformation"
+  },
+  "sermons": [
+    {
+      "title": "The Flood of His Presence",
+      "speaker": "Pastor Humphreys",
+      "duration": "48 min",
+      "thumbGradient": "linear-gradient(160deg, #1fb6c9, #0a4a52)"
+    },
+    {
+      "title": "Come As You Are",
+      "speaker": "Pastor Humphreys",
+      "duration": "52 min",
+      "thumbGradient": "linear-gradient(160deg, #a8500f, #241205)"
+    }
+  ],
+  "events": [
+    { "title": "Flood Conference 2026", "when": "Fri 21 Aug, 2026 \u00b7 17:00" },
+    { "title": "Worship Night", "when": "Fri 7 Aug, 2026 \u00b7 19:00" }
+  ],
+  "conference": {
+    "eyebrow": "CONFERENCE 2026",
+    "title": "Flood Conference \u2014 Overflow",
+    "dates": "21\u201323 August \u00b7 Area 47, Lilongwe",
+    "cta": "Register",
+    "link": "#"
+  },
+  "quickGiving": {
+    "text": "Give your tithe or offering in seconds with Mpamba, Airtel Money or card.",
+    "cta": "Give now",
+    "link": "give.html"
+  },
+  "podcasts": [
+    { "title": "The Flood Podcast \u2014 Ep. 24", "sub": "Pastor Humphreys \u00b7 36 min" },
+    { "title": "Kingdom Culture Talks", "sub": "Young Adults \u00b7 28 min" }
+  ],
+  "announcements": [
+    "Membership class starts Sunday after second service.",
+    "Growth Groups are open \u2014 find a group near Area 47.",
+    "Volunteer sign-up for Flood Conference is now live."
+  ],
+  "ministries": ["Youth", "Children", "Women", "Men", "Worship", "Media", "Evangelism", "Prayer"]
 }
