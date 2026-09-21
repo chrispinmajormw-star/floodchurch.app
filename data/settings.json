@@ -15,8 +15,8 @@
     { "title": "Auto-play next sermon", "sub": "", "field": "autoplay_next" }
   ],
   "support": [
-    { "title": "Help & FAQ", "icon": "help" },
-    { "title": "Contact the church office", "icon": "mail" }
+    { "title": "Help & FAQ", "icon": "help", "href": "help.html" },
+    { "title": "Contact the church office", "icon": "mail", "href": "mailto:office@floodchurch.org" }
   ],
   "version": "Flood Church \u00b7 v1.0.0"
 }
