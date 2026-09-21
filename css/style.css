@@ -366,6 +366,193 @@ h2.section-title {
   font-style: italic;
 }
 
+/* Home — section head with trailing link */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 28px 0 12px;
+}
+.section-head h2 { margin: 0; }
+.section-head a {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--blue);
+  flex-shrink: 0;
+}
+
+/* Home — today's devotion */
+.devotion-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+}
+.devotion-card h3 {
+  font-size: 16.5px;
+  font-weight: 800;
+  margin: 0 0 10px;
+}
+.devotion-card p {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin: 0 0 14px;
+}
+.devotion-card p b { color: var(--text); font-weight: 700; }
+.devotion-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.devotion-date { font-size: 12.5px; color: var(--text-faint); }
+.tag-pill {
+  border: 1px solid var(--blue-dim);
+  color: #79aefc;
+  background: rgba(59,130,246,0.08);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+}
+
+/* Home — recent sermons */
+.sermon-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.sermon-card { cursor: pointer; }
+.sermon-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3.1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 10px;
+  background: linear-gradient(160deg, #123842, #0a2027);
+  background-size: cover;
+  background-position: center;
+}
+.sermon-duration {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}
+.sermon-title { font-weight: 700; font-size: 14.5px; margin: 0 0 3px; line-height: 1.3; }
+.sermon-sub { font-size: 12.5px; color: var(--text-dim); margin: 0; }
+
+/* Home — upcoming events */
+.event-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 15px 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.event-row .e-title { font-weight: 700; font-size: 15px; margin: 0 0 3px; }
+.event-row .e-sub { font-size: 13px; color: var(--text-dim); margin: 0; }
+.event-row .chevron svg { width: 18px; height: 18px; }
+
+.conference-banner {
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  background: linear-gradient(135deg, #2f8bff, #3fc7e8);
+  color: #04121f;
+  margin-bottom: 8px;
+}
+.conference-banner .eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  opacity: 0.75;
+  margin-bottom: 10px;
+}
+.conference-banner h3 {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+.conference-banner p {
+  font-size: 13.5px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin: 0 0 16px;
+}
+.btn-dark {
+  background: #04121f;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 11px 20px;
+  cursor: pointer;
+}
+
+/* Home — quick giving */
+.quick-giving-card {
+  border: 1px solid #3a2e14;
+  background: linear-gradient(180deg, rgba(232,181,74,0.07), rgba(232,181,74,0.02));
+  border-radius: var(--radius-lg);
+  padding: 18px;
+}
+.quick-giving-card p {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+.btn-gold {
+  background: linear-gradient(135deg, #f0c05a, #e0973a);
+  color: #241705;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-weight: 800;
+  font-size: 14.5px;
+  padding: 12px 22px;
+  cursor: pointer;
+}
+
+/* Home — announcements */
+.announcement-row {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-pill);
+  padding: 15px 20px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+/* Home — ministry chips */
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ministry-chip {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-pill);
+  padding: 11px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
 /* Bible page */
 .search-bar {
   display: flex;
