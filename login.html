@@ -60,8 +60,6 @@
   const form = document.getElementById("login-form");
   const errorBox = document.getElementById("auth-error");
   const submitBtn = document.getElementById("submit-btn");
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -69,7 +67,7 @@
     submitBtn.disabled = true;
     submitBtn.textContent = "Signing in…";
     try {
-      await signIn(emailInput.value.trim(), passwordInput.value);
+      await signIn(email.value.trim(), password.value);
       location.href = "index.html";
     } catch (err) {
       errorBox.textContent = err.message || "Couldn't sign in. Check your details and try again.";
