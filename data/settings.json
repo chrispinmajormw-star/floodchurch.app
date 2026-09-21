@@ -14,9 +14,7 @@
     { "title": "Download over Wi-Fi only", "sub": "Save your mobile data", "on": true },
     { "title": "Auto-play next sermon", "sub": "", "on": false }
   ],
-  "appearance": [
-    { "title": "Dark mode", "sub": "Flood always looks best in dark", "on": true }
-  ],
+  "appearance": [],
   "support": [
     { "title": "Help & FAQ", "icon": "help" },
     { "title": "Contact the church office", "icon": "mail" }
