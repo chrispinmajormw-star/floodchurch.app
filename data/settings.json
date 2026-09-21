@@ -1,23 +1,22 @@
 {
   "account": [
-    { "title": "Edit profile", "sub": "Name, photo, member ID", "icon": "user" },
-    { "title": "Change password", "sub": "", "icon": "lock" },
-    { "title": "Manage payment methods", "sub": "Mpamba, Airtel Money, bank", "icon": "receipt" }
+    { "title": "Edit profile", "sub": "Name, group, team", "icon": "user", "href": "edit-profile.html" },
+    { "title": "Change password", "sub": "", "icon": "lock", "href": "edit-profile.html" },
+    { "title": "Manage payment methods", "sub": "Mpamba, Airtel Money, bank", "icon": "receipt", "href": null }
   ],
   "notifications": [
-    { "title": "Live service alerts", "sub": "Notify when Flood goes live", "on": true },
-    { "title": "Daily verse", "sub": "A reminder each morning", "on": true },
-    { "title": "Giving receipts", "sub": "Email a receipt after each gift", "on": false },
-    { "title": "Ministry updates", "sub": "News from your ministries", "on": true }
+    { "title": "Live service alerts", "sub": "Notify when Flood goes live", "field": "live_alerts" },
+    { "title": "Daily verse", "sub": "A reminder each morning", "field": "daily_verse" },
+    { "title": "Giving receipts", "sub": "Email a receipt after each gift", "field": "giving_receipts" },
+    { "title": "Ministry updates", "sub": "News from your ministries", "field": "ministry_updates" }
   ],
   "media": [
-    { "title": "Download over Wi-Fi only", "sub": "Save your mobile data", "on": true },
-    { "title": "Auto-play next sermon", "sub": "", "on": false }
+    { "title": "Download over Wi-Fi only", "sub": "Save your mobile data", "field": "wifi_only_downloads" },
+    { "title": "Auto-play next sermon", "sub": "", "field": "autoplay_next" }
   ],
-  "appearance": [],
   "support": [
     { "title": "Help & FAQ", "icon": "help" },
     { "title": "Contact the church office", "icon": "mail" }
   ],
-  "version": "Flood Church · v1.0.0"
+  "version": "Flood Church \u00b7 v1.0.0"
 }
