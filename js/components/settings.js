@@ -4,6 +4,7 @@ import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth, signOut } from "../auth.js";
 import { getTheme, getAccent, setTheme, setAccent, ACCENT_OPTIONS } from "../theme.js";
+import { supabase } from "../supabaseClient.js";
 
 function accountRow(item) {
   return `
@@ -95,9 +96,28 @@ export async function renderSettings() {
     await signOut(); // redirects to login.html
   });
 
-  document.getElementById("delete-account").addEventListener("click", () => {
-    if (confirm("Delete your account? This is a demo — nothing will actually happen.")) {
-      alert("(Demo only — no account was deleted.)");
+  document.getElementById("delete-account").addEventListener("click", async () => {
+    const confirmed = confirm(
+      "Delete your account? This permanently removes your profile, giving history, prayer requests, saved sermons and downloads. This cannot be undone."
+    );
+    if (!confirmed) return;
+
+    const row = document.getElementById("delete-account");
+    row.style.opacity = "0.5";
+    row.style.pointerEvents = "none";
+
+    const { error } = await supabase.functions.invoke("delete-account");
+
+    if (error) {
+      row.style.opacity = "1";
+      row.style.pointerEvents = "auto";
+      alert(`Couldn't delete your account: ${error.message}`);
+      return;
     }
+
+    // Clear the now-invalid local session without calling the API again.
+    await supabase.auth.signOut({ scope: "local" });
+    alert("Your account has been deleted.");
+    location.href = "login.html";
   });
 }

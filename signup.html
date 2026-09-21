@@ -3,6 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+  // Apply saved theme/accent immediately, before first paint, to avoid a flash of the default theme.
+  (function () {
+    try {
+      var t = localStorage.getItem("flood-theme") || "dark";
+      var a = localStorage.getItem("flood-accent") || "#3b82f6";
+      document.documentElement.setAttribute("data-theme", t);
+      document.documentElement.style.setProperty("--blue", a);
+    } catch (e) {}
+  })();
+</script>
 <title>Create Account — Flood Church</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -52,6 +63,9 @@
   const form = document.getElementById("signup-form");
   const errorBox = document.getElementById("auth-error");
   const submitBtn = document.getElementById("submit-btn");
+  const nameInput = document.getElementById("name");
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -60,9 +74,9 @@
     submitBtn.textContent = "Creating account…";
     try {
       const result = await signUp({
-        email: email.value.trim(),
-        password: password.value,
-        name: name.value.trim(),
+        email: emailInput.value.trim(),
+        password: passwordInput.value,
+        name: nameInput.value.trim(),
       });
       if (result.session) {
         // Email confirmation is off — go straight in.
