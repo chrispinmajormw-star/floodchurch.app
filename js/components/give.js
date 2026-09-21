@@ -1,8 +1,14 @@
 // components/give.js — renders the Give page from data/give.json and
 // handles the fund / amount / payment-method selection state.
+// On submit it writes a real row to Supabase's `gifts` table.
 import { bootApp, loadData } from "../App.js";
+import { requireAuth } from "../auth.js";
+import { supabase } from "../supabaseClient.js";
 
 export async function renderGive() {
+  const authUser = await requireAuth();
+  if (!authUser) return;
+
   bootApp({ rightIcon: "receipt" });
 
   const data = await loadData("data/give.json");
@@ -95,9 +101,30 @@ export async function renderGive() {
   }
   updateSubmit();
 
-  submitBtn.addEventListener("click", () => {
+  submitBtn.addEventListener("click", async () => {
+    if (!state.amount || state.amount <= 0) {
+      alert("Enter an amount greater than zero.");
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Processing…";
+
+    const { error } = await supabase.from("gifts").insert({
+      user_id: authUser.id,
+      fund: state.fund,
+      amount: state.amount,
+      payment_method: state.pay,
+    });
+
+    submitBtn.disabled = false;
+    updateSubmit();
+
+    if (error) {
+      alert(`Something went wrong saving your gift: ${error.message}`);
+      return;
+    }
     alert(
-      `Thank you! MWK ${state.amount.toLocaleString()} to ${state.fund} via ${state.pay}.\n\n(This is a demo — no real payment was processed.)`
+      `Thank you! MWK ${state.amount.toLocaleString()} to ${state.fund} via ${state.pay} has been recorded.\n\n(This demo records the gift in the database — no real payment was processed.)`
     );
   });
 }
