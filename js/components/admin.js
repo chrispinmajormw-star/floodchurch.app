@@ -292,7 +292,7 @@ function renderPrayerInboxSection() {
   async function loadList() {
     const { data, error } = await supabase
       .from("prayer_requests")
-      .select("*, profiles(name)")
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -304,13 +304,19 @@ function renderPrayerInboxSection() {
       return;
     }
 
+    // prayer_requests.user_id points at auth.users, not profiles directly,
+    // so PostgREST can't auto-join them — fetch names separately and merge.
+    const userIds = [...new Set(data.map((r) => r.user_id))];
+    const { data: profilesData } = await supabase.from("profiles").select("id, name").in("id", userIds);
+    const nameById = Object.fromEntries((profilesData || []).map((p) => [p.id, p.name]));
+
     listMount.innerHTML = data
       .map(
         (row) => `
       <div class="list-row" style="cursor:default;align-items:flex-start;">
         <div class="row-body">
           <p class="row-title" style="font-weight:500;line-height:1.4;">${row.content}</p>
-          <p class="row-sub">${row.profiles?.name || "Someone"} · ${timeAgo(row.created_at)}${row.prayed ? " · Prayed ✓" : ""}</p>
+          <p class="row-sub">${nameById[row.user_id] || "Someone"} · ${timeAgo(row.created_at)}${row.prayed ? " · Prayed ✓" : ""}</p>
         </div>
         <button class="chip" data-prayed="${row.id}" data-current="${row.prayed}" style="padding:6px 12px;flex-shrink:0;">
           ${row.prayed ? "Undo" : "Mark prayed"}
