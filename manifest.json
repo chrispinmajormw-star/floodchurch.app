@@ -1,5 +1,4 @@
 {
-  "id": "/",
   "name": "Flood Church",
   "short_name": "Flood Church",
   "description": "Sermons, giving, prayer requests, and daily scripture for Flood Church.",
@@ -8,10 +7,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0a0a0c",
-  "theme_color": "#3b82f6",
-  "lang": "en",
-  "dir": "auto",
-  "categories": ["productivity"],
+  "theme_color": "#0a0a0c",
   "icons": [
     { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
