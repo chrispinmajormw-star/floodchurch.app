@@ -1058,3 +1058,35 @@ h2.section-title {
   max-height: 400px;
   padding-bottom: 16px;
 }
+
+/* Bible reader */
+.bible-picker {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.bible-picker select { cursor: pointer; }
+.reader-text {
+  margin-top: 14px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: var(--text);
+}
+.reader-text .verse-num {
+  color: var(--blue);
+  font-weight: 800;
+  font-size: 12px;
+  vertical-align: super;
+  margin-right: 3px;
+}
+.reader-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
