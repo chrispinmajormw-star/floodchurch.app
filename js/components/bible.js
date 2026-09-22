@@ -1,6 +1,6 @@
-// components/bible.js — renders the Bible page from data/bible.json,
-// real per-user reading-plan progress, and a live KJV reader (book/chapter
-// navigation + free-text search) backed by the public bible-api.com API.
+// components/bible.js — full-page KJV reader (book/chapter picker, drop-cap
+// chapter numeral, floating prev/next) plus Daily Reading and Reading Plans
+// tucked behind icon buttons as bottom-sheet modals.
 import { bootApp, loadData } from "../App.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
@@ -10,12 +10,42 @@ const STEP = 5; // percent added each time "Mark today's reading" is tapped
 const LAST_READ_KEY = "flood-bible-last";
 const BIBLE_API = "https://bible-api.com";
 
+function openModal(id) {
+  document.getElementById(id).classList.add("open");
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove("open");
+}
+
+function wireModals() {
+  document.getElementById("picker-open").addEventListener("click", () => openModal("picker-modal"));
+  document.getElementById("daily-open").addEventListener("click", () => openModal("daily-modal"));
+  document.getElementById("plans-open").addEventListener("click", () => openModal("plans-modal"));
+
+  document.querySelectorAll(".modal-close").forEach((btn) => {
+    btn.addEventListener("click", () => closeModal(btn.dataset.close));
+  });
+  document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.classList.remove("open");
+    });
+  });
+
+  document.getElementById("search-open").addEventListener("click", () => {
+    const row = document.getElementById("search-row");
+    const showing = row.style.display !== "none";
+    row.style.display = showing ? "none" : "flex";
+    if (!showing) document.getElementById("verse-search-input").focus();
+  });
+}
+
 function initBibleReader() {
   const bookSelect = document.getElementById("book-select");
   const chapterSelect = document.getElementById("chapter-select");
   const textMount = document.getElementById("reader-text");
   const statusEl = document.getElementById("reader-status");
-  const locationEl = document.getElementById("reader-location");
+  const titleEl = document.getElementById("reader-title");
+  const bannerEl = document.getElementById("book-banner");
   const prevBtn = document.getElementById("prev-chapter");
   const nextBtn = document.getElementById("next-chapter");
   const searchInput = document.getElementById("verse-search-input");
@@ -31,23 +61,32 @@ function initBibleReader() {
     chapterSelect.value = selected || 1;
   }
 
-  async function loadChapter(bookName, chapter, verse) {
+  function renderVerses(verses, chapterNum) {
+    if (!verses.length) {
+      textMount.innerHTML = "";
+      return;
+    }
+    const [first, ...rest] = verses;
+    const dropcap = `<span class="reader-dropcap">${chapterNum}</span>${first.text.trim()} `;
+    const restHtml = rest.map((v) => `<span class="verse-num">${v.verse}</span>${v.text.trim()} `).join("");
+    textMount.innerHTML = dropcap + restHtml;
+  }
+
+  async function loadChapter(bookName, chapter) {
     statusEl.textContent = "Loading…";
     textMount.innerHTML = "";
-    const ref = verse ? `${bookName} ${chapter}:${verse}` : `${bookName} ${chapter}`;
-    locationEl.textContent = `${bookName} ${chapter}`;
+    titleEl.textContent = `${bookName} ${chapter}`;
+    bannerEl.style.display = String(chapter) === "1" ? "block" : "none";
+    bannerEl.textContent = bookName.toUpperCase();
 
     try {
-      const res = await fetch(`${BIBLE_API}/${encodeURIComponent(ref)}?translation=kjv`);
+      const res = await fetch(`${BIBLE_API}/${encodeURIComponent(`${bookName} ${chapter}`)}?translation=kjv`);
       if (!res.ok) throw new Error("Couldn't find that passage.");
       const data = await res.json();
       if (!data.verses || !data.verses.length) throw new Error("No text found for that passage.");
 
       statusEl.textContent = "";
-      textMount.innerHTML = data.verses
-        .map((v) => `<span class="verse-num">${v.verse}</span>${v.text.trim()} `)
-        .join("");
-
+      renderVerses(data.verses, chapter);
       localStorage.setItem(LAST_READ_KEY, JSON.stringify({ book: bookName, chapter }));
     } catch (err) {
       statusEl.textContent = `Couldn't load that passage — check your connection and try again. (${err.message})`;
@@ -57,10 +96,12 @@ function initBibleReader() {
   bookSelect.addEventListener("change", () => {
     populateChapters(bookSelect.value, 1);
     loadChapter(bookSelect.value, 1);
+    closeModal("picker-modal");
   });
 
   chapterSelect.addEventListener("change", () => {
     loadChapter(bookSelect.value, chapterSelect.value);
+    closeModal("picker-modal");
   });
 
   prevBtn.addEventListener("click", () => {
@@ -74,6 +115,7 @@ function initBibleReader() {
     bookSelect.value = BIBLE_BOOKS[targetBookIndex].name;
     populateChapters(bookSelect.value, chapter);
     loadChapter(bookSelect.value, chapter);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
   nextBtn.addEventListener("click", () => {
@@ -88,6 +130,7 @@ function initBibleReader() {
     bookSelect.value = BIBLE_BOOKS[targetBookIndex].name;
     populateChapters(bookSelect.value, chapter);
     loadChapter(bookSelect.value, chapter);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
   // Free-text search — "John 3:16", "Psalm 23", "romans 8" all work,
@@ -97,17 +140,20 @@ function initBibleReader() {
     const query = searchInput.value.trim();
     if (!query) return;
 
-    // Best-effort: sync the dropdowns if the typed book matches a known one.
     const match = BIBLE_BOOKS.find((b) => query.toLowerCase().startsWith(b.name.toLowerCase()));
     const chapterMatch = query.match(/(\d+)(?::\d+)?\s*$/);
     if (match) {
       populateChapters(match.name, chapterMatch ? chapterMatch[1] : 1);
       bookSelect.value = match.name;
+      titleEl.textContent = `${match.name} ${chapterMatch ? chapterMatch[1] : ""}`.trim();
+      bannerEl.style.display = "none";
+    } else {
+      titleEl.textContent = "Search";
+      bannerEl.style.display = "none";
     }
 
     statusEl.textContent = "Loading…";
     textMount.innerHTML = "";
-    locationEl.textContent = query;
     fetch(`${BIBLE_API}/${encodeURIComponent(query)}?translation=kjv`)
       .then((res) => {
         if (!res.ok) throw new Error("Couldn't find that passage.");
@@ -141,8 +187,9 @@ export async function renderBible() {
   const authUser = await requireAuth();
   if (!authUser) return;
 
-  bootApp({ rightIcon: "bookmark" });
+  bootApp({}); // no page topbar on this page, but still applies theme + bottom nav
 
+  wireModals();
   initBibleReader();
 
   const [data, progressRes] = await Promise.all([

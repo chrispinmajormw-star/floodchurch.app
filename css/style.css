@@ -1059,34 +1059,150 @@ h2.section-title {
   padding-bottom: 16px;
 }
 
-/* Bible reader */
-.bible-picker {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-.bible-picker select { cursor: pointer; }
-.reader-text {
-  margin-top: 14px;
-  max-height: 420px;
-  overflow-y: auto;
-  padding-right: 4px;
-  font-size: 15.5px;
-  line-height: 1.8;
-  color: var(--text);
-}
-.reader-text .verse-num {
-  color: var(--blue);
-  font-weight: 800;
-  font-size: 12px;
-  vertical-align: super;
-  margin-right: 3px;
-}
-.reader-nav {
+/* Bible reader — full-page book-style layout */
+.bible-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+  gap: 10px;
+  padding: 16px 14px 12px;
+  border-bottom: 1px solid var(--border);
 }
+.bible-header-center { text-align: center; flex: 1; min-width: 0; }
+.bible-header-center h1 {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bible-header-center span {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.bible-header-icons { display: flex; gap: 2px; flex-shrink: 0; }
+
+.reader-page {
+  padding: 20px 22px calc(var(--nav-h) + 24px);
+  position: relative;
+}
+.reader-status {
+  color: var(--text-dim);
+  font-size: 13.5px;
+  min-height: 18px;
+  margin-bottom: 6px;
+}
+.book-banner {
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin: 4px 0 28px;
+  color: var(--text);
+}
+
+.bible-picker {
+  display: flex;
+  gap: 10px;
+}
+.bible-picker select { cursor: pointer; }
+
+.reader-text {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.9;
+  color: var(--text);
+}
+.reader-text::after { content: ""; display: block; clear: both; }
+.reader-text .verse-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue);
+  vertical-align: super;
+  margin: 0 2px 0 7px;
+}
+.reader-text .verse-num:first-child { margin-left: 0; }
+.reader-dropcap {
+  float: left;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 66px;
+  font-weight: 700;
+  line-height: 0.78;
+  padding: 4px 10px 0 0;
+  color: var(--text);
+}
+
+.reader-floating-nav {
+  position: sticky;
+  bottom: calc(var(--nav-h) + 14px);
+  display: flex;
+  justify-content: space-between;
+  margin-top: 28px;
+  pointer-events: none;
+}
+.reader-nav-btn {
+  pointer-events: auto;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+.reader-nav-btn svg { width: 20px; height: 20px; }
+
+/* Generic bottom-sheet modal, used for the book/chapter picker, daily
+   reading, and reading plans on the Bible page. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-sheet {
+  background: var(--surface);
+  width: 100%;
+  max-width: 480px;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px calc(env(safe-area-inset-bottom, 0px) + 20px);
+  max-height: 80vh;
+  overflow-y: auto;
+  transform: translateY(24px);
+  transition: transform 0.2s ease;
+}
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-close svg { width: 18px; height: 18px; }
