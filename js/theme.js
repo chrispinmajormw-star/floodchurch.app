@@ -19,6 +19,8 @@ export function getAccent() {
   return localStorage.getItem(ACCENT_KEY) || ACCENT_OPTIONS[0].value;
 }
 
+const BG_COLORS = { dark: "#0a0a0c", light: "#f5f6f8" };
+
 function hexToRgba(hex, alpha) {
   const n = parseInt(hex.replace("#", ""), 16);
   const r = (n >> 16) & 255,
@@ -35,6 +37,12 @@ export function applyTheme(theme = getTheme(), accent = getAccent()) {
     "--blue-dim",
     hexToRgba(accent, theme === "light" ? 0.12 : 0.2)
   );
+
+  // Browser chrome (address bar / task-switcher card) follows the page
+  // background, not the accent — same as the in-app top/bottom bars do.
+  const bg = BG_COLORS[theme] || BG_COLORS.dark;
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) metaTheme.setAttribute("content", bg);
 }
 
 export function setTheme(theme) {
