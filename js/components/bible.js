@@ -1,16 +1,149 @@
 // components/bible.js — renders the Bible page from data/bible.json,
-// with real per-user progress from Supabase's reading_plan_progress table.
+// real per-user reading-plan progress, and a live KJV reader (book/chapter
+// navigation + free-text search) backed by the public bible-api.com API.
 import { bootApp, loadData } from "../App.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
+import { BIBLE_BOOKS } from "../bible-books.js";
 
 const STEP = 5; // percent added each time "Mark today's reading" is tapped
+const LAST_READ_KEY = "flood-bible-last";
+const BIBLE_API = "https://bible-api.com";
+
+function initBibleReader() {
+  const bookSelect = document.getElementById("book-select");
+  const chapterSelect = document.getElementById("chapter-select");
+  const textMount = document.getElementById("reader-text");
+  const statusEl = document.getElementById("reader-status");
+  const locationEl = document.getElementById("reader-location");
+  const prevBtn = document.getElementById("prev-chapter");
+  const nextBtn = document.getElementById("next-chapter");
+  const searchInput = document.getElementById("verse-search-input");
+
+  bookSelect.innerHTML = BIBLE_BOOKS.map((b) => `<option value="${b.name}">${b.name}</option>`).join("");
+
+  function populateChapters(bookName, selected) {
+    const book = BIBLE_BOOKS.find((b) => b.name === bookName);
+    const count = book ? book.chapters : 1;
+    chapterSelect.innerHTML = Array.from({ length: count }, (_, i) => i + 1)
+      .map((n) => `<option value="${n}">${n}</option>`)
+      .join("");
+    chapterSelect.value = selected || 1;
+  }
+
+  async function loadChapter(bookName, chapter, verse) {
+    statusEl.textContent = "Loading…";
+    textMount.innerHTML = "";
+    const ref = verse ? `${bookName} ${chapter}:${verse}` : `${bookName} ${chapter}`;
+    locationEl.textContent = `${bookName} ${chapter}`;
+
+    try {
+      const res = await fetch(`${BIBLE_API}/${encodeURIComponent(ref)}?translation=kjv`);
+      if (!res.ok) throw new Error("Couldn't find that passage.");
+      const data = await res.json();
+      if (!data.verses || !data.verses.length) throw new Error("No text found for that passage.");
+
+      statusEl.textContent = "";
+      textMount.innerHTML = data.verses
+        .map((v) => `<span class="verse-num">${v.verse}</span>${v.text.trim()} `)
+        .join("");
+
+      localStorage.setItem(LAST_READ_KEY, JSON.stringify({ book: bookName, chapter }));
+    } catch (err) {
+      statusEl.textContent = `Couldn't load that passage — check your connection and try again. (${err.message})`;
+    }
+  }
+
+  bookSelect.addEventListener("change", () => {
+    populateChapters(bookSelect.value, 1);
+    loadChapter(bookSelect.value, 1);
+  });
+
+  chapterSelect.addEventListener("change", () => {
+    loadChapter(bookSelect.value, chapterSelect.value);
+  });
+
+  prevBtn.addEventListener("click", () => {
+    const bookIndex = BIBLE_BOOKS.findIndex((b) => b.name === bookSelect.value);
+    let chapter = parseInt(chapterSelect.value, 10) - 1;
+    let targetBookIndex = bookIndex;
+    if (chapter < 1) {
+      targetBookIndex = Math.max(0, bookIndex - 1);
+      chapter = BIBLE_BOOKS[targetBookIndex].chapters;
+    }
+    bookSelect.value = BIBLE_BOOKS[targetBookIndex].name;
+    populateChapters(bookSelect.value, chapter);
+    loadChapter(bookSelect.value, chapter);
+  });
+
+  nextBtn.addEventListener("click", () => {
+    const bookIndex = BIBLE_BOOKS.findIndex((b) => b.name === bookSelect.value);
+    const maxChapter = BIBLE_BOOKS[bookIndex].chapters;
+    let chapter = parseInt(chapterSelect.value, 10) + 1;
+    let targetBookIndex = bookIndex;
+    if (chapter > maxChapter) {
+      targetBookIndex = Math.min(BIBLE_BOOKS.length - 1, bookIndex + 1);
+      chapter = 1;
+    }
+    bookSelect.value = BIBLE_BOOKS[targetBookIndex].name;
+    populateChapters(bookSelect.value, chapter);
+    loadChapter(bookSelect.value, chapter);
+  });
+
+  // Free-text search — "John 3:16", "Psalm 23", "romans 8" all work,
+  // since bible-api.com parses the reference itself.
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    const query = searchInput.value.trim();
+    if (!query) return;
+
+    // Best-effort: sync the dropdowns if the typed book matches a known one.
+    const match = BIBLE_BOOKS.find((b) => query.toLowerCase().startsWith(b.name.toLowerCase()));
+    const chapterMatch = query.match(/(\d+)(?::\d+)?\s*$/);
+    if (match) {
+      populateChapters(match.name, chapterMatch ? chapterMatch[1] : 1);
+      bookSelect.value = match.name;
+    }
+
+    statusEl.textContent = "Loading…";
+    textMount.innerHTML = "";
+    locationEl.textContent = query;
+    fetch(`${BIBLE_API}/${encodeURIComponent(query)}?translation=kjv`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Couldn't find that passage.");
+        return res.json();
+      })
+      .then((data) => {
+        if (!data.verses || !data.verses.length) throw new Error("No text found for that passage.");
+        statusEl.textContent = "";
+        textMount.innerHTML = data.verses
+          .map((v) => `<span class="verse-num">${v.verse}</span>${v.text.trim()} `)
+          .join("");
+      })
+      .catch((err) => {
+        statusEl.textContent = `${err.message} Try a format like "John 3:16" or "Psalm 23".`;
+      });
+  });
+
+  // Restore last-read position, or default to John 3.
+  let start = { book: "John", chapter: 3 };
+  try {
+    const saved = JSON.parse(localStorage.getItem(LAST_READ_KEY));
+    if (saved && BIBLE_BOOKS.some((b) => b.name === saved.book)) start = saved;
+  } catch (e) {}
+
+  bookSelect.value = start.book;
+  populateChapters(start.book, start.chapter);
+  loadChapter(start.book, start.chapter);
+}
 
 export async function renderBible() {
   const authUser = await requireAuth();
   if (!authUser) return;
 
   bootApp({ rightIcon: "bookmark" });
+
+  initBibleReader();
 
   const [data, progressRes] = await Promise.all([
     loadData("data/bible.json"),

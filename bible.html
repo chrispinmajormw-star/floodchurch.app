@@ -30,9 +30,24 @@
   <div class="page">
     <h1 class="page-title">Bible</h1>
 
-    <div class="search-bar">
+    <div class="search-bar" id="search-bar" style="cursor:text;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      Search a verse, e.g. John 3:16
+      <input id="verse-search-input" type="text" placeholder="Search a verse, e.g. John 3:16" style="background:none;border:none;color:var(--text);font-size:14px;flex:1;outline:none;">
+    </div>
+
+    <h2 class="section-title" style="margin-top:0;">Read the Bible</h2>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="bible-picker">
+        <select id="book-select" class="auth-input" style="flex:2;"></select>
+        <select id="chapter-select" class="auth-input" style="flex:1;"></select>
+      </div>
+      <div id="reader-status" style="color:var(--text-dim);font-size:13.5px;margin:10px 0 0;"></div>
+      <div id="reader-text" class="reader-text"></div>
+      <div class="reader-nav">
+        <button class="chip" id="prev-chapter">&larr; Prev</button>
+        <span id="reader-location" style="color:var(--text-dim);font-size:13px;"></span>
+        <button class="chip" id="next-chapter">Next &rarr;</button>
+      </div>
     </div>
 
     <div class="daily-card">
