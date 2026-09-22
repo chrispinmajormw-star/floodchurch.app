@@ -55,14 +55,20 @@ export async function renderProfile() {
   document.getElementById("stat-plans").textContent = plansRes.data?.length ?? 0;
 
   const listMount = document.getElementById("profile-list");
-  listMount.innerHTML = LIST_ROWS.map(
-    (row) => `
+  const rows = [...LIST_ROWS];
+  if (profile.is_admin) {
+    rows.push({ key: "admin", title: "Admin dashboard", icon: "gear", href: "admin.html" });
+  }
+  listMount.innerHTML = rows
+    .map(
+      (row) => `
     <a class="list-row" href="${row.href}">
       <div class="row-icon">${ICONS[row.icon]}</div>
       <div class="row-body"><p class="row-title">${row.title}</p></div>
       <div class="chevron">${ICONS.chevron}</div>
     </a>`
-  ).join("");
+    )
+    .join("");
 
   const ministryMount = document.getElementById("ministry-grid");
   ministryMount.innerHTML = (ministriesRes.data || [])
