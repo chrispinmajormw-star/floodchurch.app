@@ -1,6 +1,7 @@
-// components/admin.js — a single config-driven CRUD dashboard covering
-// Announcements, Events, Conferences, Devotions, Sermons, Podcasts, and
-// Media Live. Only visible to profiles with is_admin = true.
+// components/admin.js — a single config-driven dashboard covering both
+// roles: Admins get Announcements/Events/Conferences/Sermons/Podcasts/
+// Media Live; Pastors get the Prayer Requests inbox, Today's Devotion,
+// and Verse of the Day. Devotions can be posted by either role.
 import { bootApp } from "../App.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
@@ -9,6 +10,7 @@ const SECTIONS = [
   {
     table: "announcements",
     title: "Announcements",
+    roles: ["admin"],
     orderBy: "sort_order",
     fields: [{ key: "content", label: "Announcement text", type: "textarea" }],
     listLabel: (row) => row.content,
@@ -16,6 +18,7 @@ const SECTIONS = [
   {
     table: "events",
     title: "Upcoming Events",
+    roles: ["admin"],
     orderBy: "event_date",
     fields: [
       { key: "title", label: "Title", type: "text" },
@@ -27,6 +30,7 @@ const SECTIONS = [
   {
     table: "conferences",
     title: "Conference Banner",
+    roles: ["admin"],
     orderBy: "created_at",
     fields: [
       { key: "eyebrow", label: "Eyebrow label (e.g. CONFERENCE 2026)", type: "text" },
@@ -40,6 +44,7 @@ const SECTIONS = [
   {
     table: "devotions",
     title: "Today's Devotion",
+    roles: ["admin", "pastor"],
     orderBy: "devotion_date",
     fields: [
       { key: "title", label: "Title", type: "text" },
@@ -51,8 +56,21 @@ const SECTIONS = [
     listLabel: (row) => `${row.title} (${row.devotion_date})`,
   },
   {
+    table: "verse_of_day",
+    title: "Verse of the Day",
+    roles: ["admin", "pastor"],
+    orderBy: "verse_date",
+    fields: [
+      { key: "text", label: "Verse text", type: "textarea" },
+      { key: "reference", label: "Reference (e.g. Isaiah 43:19)", type: "text" },
+      { key: "verse_date", label: "Date", type: "date" },
+    ],
+    listLabel: (row) => `${row.reference} (${row.verse_date})`,
+  },
+  {
     table: "sermons",
     title: "Recent Sermons",
+    roles: ["admin"],
     orderBy: "created_at",
     fields: [
       { key: "title", label: "Title", type: "text" },
@@ -66,6 +84,7 @@ const SECTIONS = [
   {
     table: "podcasts",
     title: "Podcasts",
+    roles: ["admin"],
     orderBy: "created_at",
     fields: [
       { key: "title", label: "Title", type: "text" },
@@ -249,6 +268,80 @@ function renderMediaLiveSection() {
   return wrap;
 }
 
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins || 1}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+function renderPrayerInboxSection() {
+  const wrap = document.createElement("div");
+  wrap.className = "card";
+  wrap.style.marginBottom = "24px";
+  wrap.innerHTML = `
+    <h2 class="section-title" style="margin-top:0;">Prayer Requests</h2>
+    <p style="color:var(--text-dim);font-size:13.5px;margin:-8px 0 14px;">Every request submitted across the app, newest first.</p>
+    <div class="admin-list"></div>
+  `;
+  const listMount = wrap.querySelector(".admin-list");
+
+  async function loadList() {
+    const { data, error } = await supabase
+      .from("prayer_requests")
+      .select("*, profiles(name)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      listMount.innerHTML = `<p style="color:var(--red);font-size:13px;">${error.message}</p>`;
+      return;
+    }
+    if (!data.length) {
+      listMount.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">No prayer requests yet.</p>`;
+      return;
+    }
+
+    listMount.innerHTML = data
+      .map(
+        (row) => `
+      <div class="list-row" style="cursor:default;align-items:flex-start;">
+        <div class="row-body">
+          <p class="row-title" style="font-weight:500;line-height:1.4;">${row.content}</p>
+          <p class="row-sub">${row.profiles?.name || "Someone"} · ${timeAgo(row.created_at)}${row.prayed ? " · Prayed ✓" : ""}</p>
+        </div>
+        <button class="chip" data-prayed="${row.id}" data-current="${row.prayed}" style="padding:6px 12px;flex-shrink:0;">
+          ${row.prayed ? "Undo" : "Mark prayed"}
+        </button>
+      </div>`
+      )
+      .join("");
+
+    listMount.querySelectorAll("[data-prayed]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.prayed;
+        const current = btn.dataset.current === "true";
+        btn.disabled = true;
+        const { error: updError } = await supabase
+          .from("prayer_requests")
+          .update({ prayed: !current })
+          .eq("id", id);
+        btn.disabled = false;
+        if (updError) {
+          alert(`Couldn't update: ${updError.message}`);
+          return;
+        }
+        loadList();
+      });
+    });
+  }
+
+  loadList();
+  return wrap;
+}
+
 export async function renderAdmin() {
   const authUser = await requireAuth();
   if (!authUser) return;
@@ -257,20 +350,30 @@ export async function renderAdmin() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_admin")
+    .select("is_admin, is_pastor")
     .eq("id", authUser.id)
     .maybeSingle();
 
   const contentMount = document.getElementById("admin-content");
+  const isAdmin = !!profile?.is_admin;
+  const isPastor = !!profile?.is_pastor;
 
-  if (!profile?.is_admin) {
-    contentMount.innerHTML = `<p style="color:var(--text-dim);">You don't have admin access on this account.</p>`;
+  if (!isAdmin && !isPastor) {
+    contentMount.innerHTML = `<p style="color:var(--text-dim);">You don't have admin or pastor access on this account.</p>`;
     return;
   }
 
   contentMount.innerHTML = "";
-  contentMount.appendChild(renderMediaLiveSection());
+
+  if (isPastor) {
+    contentMount.appendChild(renderPrayerInboxSection());
+  }
+  if (isAdmin) {
+    contentMount.appendChild(renderMediaLiveSection());
+  }
+
   SECTIONS.forEach((section) => {
-    contentMount.appendChild(renderSection(section));
+    const allowed = section.roles.some((r) => (r === "admin" && isAdmin) || (r === "pastor" && isPastor));
+    if (allowed) contentMount.appendChild(renderSection(section));
   });
 }

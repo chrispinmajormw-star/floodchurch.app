@@ -64,6 +64,7 @@ export async function renderHome() {
     announcementsRes,
     ministriesRes,
     liveRes,
+    verseRes,
   ] = await Promise.all([
     loadData("data/home.json"),
     supabase.from("profiles").select("name").eq("id", authUser.id).maybeSingle(),
@@ -75,6 +76,7 @@ export async function renderHome() {
     supabase.from("announcements").select("*").order("sort_order"),
     supabase.from("ministries").select("*").order("sort_order"),
     supabase.from("media_live").select("*").eq("id", 1).maybeSingle(),
+    supabase.from("verse_of_day").select("*").order("verse_date", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
   const displayName = profileRes.data?.name || authUser.email.split("@")[0];
@@ -110,7 +112,8 @@ export async function renderHome() {
   document.getElementById("service-meta").innerHTML = `${home.service.days.join(
     " &middot; "
   )}<br>${home.service.address}`;
-  document.getElementById("verse-text").textContent = `\u201c${home.verseOfDay.text}\u201d \u2014 ${home.verseOfDay.reference}`;
+  const verse = verseRes.data || home.verseOfDay;
+  document.getElementById("verse-text").textContent = `\u201c${verse.text}\u201d \u2014 ${verse.reference}`;
 
   // Today's devotion
   const d = devotionRes.data;

@@ -56,7 +56,7 @@ export async function renderProfile() {
 
   const listMount = document.getElementById("profile-list");
   const rows = [...LIST_ROWS];
-  if (profile.is_admin) {
+  if (profile.is_admin || profile.is_pastor) {
     rows.push({ key: "admin", title: "Admin dashboard", icon: "gear", href: "admin.html" });
   }
   listMount.innerHTML = rows
