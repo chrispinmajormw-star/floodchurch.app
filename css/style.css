@@ -436,7 +436,7 @@ h2.section-title {
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
-.sermon-card { cursor: pointer; }
+.sermon-card { cursor: pointer; position: relative; }
 .sermon-thumb {
   position: relative;
   width: 100%;

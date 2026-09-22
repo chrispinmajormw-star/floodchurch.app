@@ -3,10 +3,5 @@
     { "title": "Sermons", "sub": "Video & audio messages", "icon": "sermon" },
     { "title": "Live TV", "sub": "Sundays 9 & 11 am", "icon": "tv" },
     { "title": "Devotions", "sub": "Daily scripture", "icon": "devotion" }
-  ],
-  "podcasts": [
-    { "title": "The Flood Podcast — Ep. 24", "sub": "Pastor Humphreys · 36 min" },
-    { "title": "Kingdom Culture Talks", "sub": "Young Adults · 28 min" },
-    { "title": "Worship Room Sessions", "sub": "Media Team · 41 min" }
   ]
 }
