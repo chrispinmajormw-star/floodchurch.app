@@ -71,9 +71,24 @@ export async function renderProfile() {
     .join("");
 
   const ministryMount = document.getElementById("ministry-grid");
-  ministryMount.innerHTML = (ministriesRes.data || [])
-    .map(
-      (m) => `<div class="ministry-pill"><b>${m.name}</b> &middot; ${m.leader}</div>`
+  const ministries = ministriesRes.data || [];
+  ministryMount.innerHTML = ministries
+    .map((m) =>
+      m.link
+        ? `<a class="list-row" href="${m.link}" target="_blank" rel="noopener">
+             <div class="row-body"><p class="row-title">${m.name}</p></div>
+             <div class="chevron">${ICONS.chevron}</div>
+           </a>`
+        : `<div class="list-row" style="cursor:pointer;" data-noform="${m.name}">
+             <div class="row-body"><p class="row-title">${m.name}</p></div>
+             <div class="chevron">${ICONS.chevron}</div>
+           </div>`
     )
     .join("");
+
+  ministryMount.querySelectorAll("[data-noform]").forEach((el) => {
+    el.addEventListener("click", () => {
+      alert(`Registration for ${el.dataset.noform} isn't open yet — check back soon.`);
+    });
+  });
 }
