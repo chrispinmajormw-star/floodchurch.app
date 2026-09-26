@@ -23,7 +23,8 @@ const SECTIONS = [
     fields: [
       { key: "title", label: "Title", type: "text" },
       { key: "event_date", label: "Date & time", type: "datetime-local" },
-      { key: "location", label: "Location", type: "text" },
+      { key: "location", label: "Location", type: "text", optional: true },
+      { key: "description", label: "Full details (optional)", type: "textarea", optional: true },
     ],
     listLabel: (row) => `${row.title} — ${new Date(row.event_date).toLocaleString()}`,
   },
@@ -98,9 +99,9 @@ const SECTIONS = [
 
 function fieldInput(field) {
   if (field.type === "textarea") {
-    return `<textarea class="amount-input" style="border-radius:var(--radius-md); min-height:80px; font-weight:400; font-size:14.5px;" name="${field.key}" placeholder="${field.label}" required></textarea>`;
+    return `<textarea class="amount-input" style="border-radius:var(--radius-md); min-height:80px; font-weight:400; font-size:14.5px;" name="${field.key}" placeholder="${field.label}" ${field.optional ? "" : "required"}></textarea>`;
   }
-  return `<input class="auth-input" type="${field.type}" name="${field.key}" placeholder="${field.label}" value="${field.default || ""}" ${field.type === "text" ? "required" : ""}>`;
+  return `<input class="auth-input" type="${field.type}" name="${field.key}" placeholder="${field.label}" value="${field.default || ""}" ${field.type === "text" && !field.optional ? "required" : ""}>`;
 }
 
 async function uploadFile(file, folder) {

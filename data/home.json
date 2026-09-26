@@ -10,7 +10,7 @@
   },
   "quickActions": [
     { "label": "Prayer", "icon": "pray", "link": "prayer.html" },
-    { "label": "Events", "icon": "calendar", "link": "#" },
+    { "label": "Events", "icon": "calendar", "link": "events.html" },
     { "label": "Give", "icon": "heart", "link": "give.html" },
     { "label": "Podcast", "icon": "podcast", "link": "media.html" }
   ],

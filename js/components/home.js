@@ -168,13 +168,13 @@ export async function renderHome() {
     events
       .map(
         (e) => `
-      <div class="event-row">
+      <a class="event-row" href="events.html?id=${e.id}" style="text-decoration:none;color:inherit;">
         <div>
           <p class="e-title">${e.title}</p>
           <p class="e-sub">${new Date(e.event_date).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}${e.location ? " · " + e.location : ""}</p>
         </div>
         <div class="chevron">${ICONS.chevron}</div>
-      </div>`
+      </a>`
       )
       .join("") || `<p style="color:var(--text-dim);font-size:14px;">No upcoming events.</p>`;
 
