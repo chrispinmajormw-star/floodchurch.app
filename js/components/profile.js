@@ -10,7 +10,8 @@ const LIST_ROWS = [
   { key: "prayer", title: "Prayer requests", icon: "pray", href: "prayer.html" },
   { key: "sermons", title: "Saved sermons", icon: "bookmark", href: "saved-sermons.html" },
   { key: "downloads", title: "Downloads", icon: "downloads", href: "downloads.html" },
-  { key: "ministries", title: "Ministries", icon: "ministries", href: "#" },
+  { key: "discipleship", title: "Discipleship", icon: "book", href: "discipleship.html" },
+  { key: "involve", title: "Be Involved in the Church", icon: "ministries", href: "be-involved.html" },
 ];
 
 function formatMWK(amount) {

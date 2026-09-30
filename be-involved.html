@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("flood-theme") || "dark";
+      var a = localStorage.getItem("flood-accent") || "#3b82f6";
+      var bg = t === "light" ? "#f5f6f8" : "#0a0a0c";
+      document.documentElement.setAttribute("data-theme", t);
+      document.documentElement.style.setProperty("--blue", a);
+      var metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute("content", bg);
+    } catch (e) {}
+  })();
+</script>
+<title>Be Involved — Flood Church</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Flood Church">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar" id="topbar"></header>
+
+  <div class="page">
+    <h1 class="page-title">Be Involved in the Church</h1>
+    <p class="page-sub">Find your place to connect and grow with others.</p>
+
+    <div id="involve-list"></div>
+    <p id="involve-empty" style="display:none; color:var(--text-dim); font-size:14px;">Nothing posted yet.</p>
+  </div>
+
+  <nav class="bottomnav" id="bottomnav"></nav>
+</div>
+
+<script type="module">
+  import { renderSimpleListPage } from "./js/simple-list.js";
+  renderSimpleListPage({
+    table: "involvement_options",
+    title: "Be Involved",
+    mountId: "involve-list",
+    emptyId: "involve-empty",
+  });
+</script>
+</body>
+</html>

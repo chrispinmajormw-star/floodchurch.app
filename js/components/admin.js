@@ -106,6 +106,30 @@ const SECTIONS = [
     ],
     listLabel: (row) => `${row.name}${row.link ? " — has a form link" : " — no form link yet"}`,
   },
+  {
+    table: "discipleship_resources",
+    title: "Discipleship",
+    roles: ["admin"],
+    orderBy: "sort_order",
+    fields: [
+      { key: "name", label: "Resource/course name", type: "text" },
+      { key: "description", label: "Short description (optional)", type: "textarea", optional: true },
+      { key: "link", label: "Link (optional)", type: "text", optional: true },
+    ],
+    listLabel: (row) => `${row.name}${row.link ? " — has a link" : ""}`,
+  },
+  {
+    table: "involvement_options",
+    title: "Be Involved in the Church",
+    roles: ["admin"],
+    orderBy: "sort_order",
+    fields: [
+      { key: "name", label: "Name (e.g. Prayer Cafe)", type: "text" },
+      { key: "description", label: "Short description (optional)", type: "textarea", optional: true },
+      { key: "link", label: "Link (optional)", type: "text", optional: true },
+    ],
+    listLabel: (row) => `${row.name}${row.link ? " — has a link" : ""}`,
+  },
 ];
 
 function fieldInput(field) {
