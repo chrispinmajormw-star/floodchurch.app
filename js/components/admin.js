@@ -114,9 +114,8 @@ const SECTIONS = [
     fields: [
       { key: "name", label: "Resource/course name", type: "text" },
       { key: "description", label: "Short description (optional)", type: "textarea", optional: true },
-      { key: "link", label: "Link (optional)", type: "text", optional: true },
     ],
-    listLabel: (row) => `${row.name}${row.link ? " — has a link" : ""}`,
+    listLabel: (row) => row.name,
   },
   {
     table: "involvement_options",
@@ -126,9 +125,8 @@ const SECTIONS = [
     fields: [
       { key: "name", label: "Name (e.g. Prayer Cafe)", type: "text" },
       { key: "description", label: "Short description (optional)", type: "textarea", optional: true },
-      { key: "link", label: "Link (optional)", type: "text", optional: true },
     ],
-    listLabel: (row) => `${row.name}${row.link ? " — has a link" : ""}`,
+    listLabel: (row) => row.name,
   },
 ];
 
@@ -384,6 +382,88 @@ function renderPrayerInboxSection() {
   return wrap;
 }
 
+function renderApplicationsSection() {
+  const wrap = document.createElement("div");
+  wrap.className = "card";
+  wrap.style.marginBottom = "24px";
+  wrap.innerHTML = `
+    <h2 class="section-title" style="margin-top:0;">Applications</h2>
+    <p style="color:var(--text-dim);font-size:13.5px;margin:-8px 0 14px;">Discipleship and Be Involved sign-ups, newest first.</p>
+    <div class="admin-list"></div>
+  `;
+  const listMount = wrap.querySelector(".admin-list");
+
+  async function loadList() {
+    const { data, error } = await supabase
+      .from("applications")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      listMount.innerHTML = `<p style="color:var(--red);font-size:13px;">${error.message}</p>`;
+      return;
+    }
+    if (!data.length) {
+      listMount.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">No applications yet.</p>`;
+      return;
+    }
+
+    listMount.innerHTML = data
+      .map(
+        (row) => `
+      <div class="list-row" style="cursor:default;align-items:flex-start;">
+        <div class="row-body">
+          <p class="row-title" style="font-weight:700;">${row.item_name} <span style="font-weight:500;color:var(--text-dim);">(${row.category})</span></p>
+          <p class="row-sub" style="margin-bottom:4px;">${row.name} · ${row.email}${row.phone ? " · " + row.phone : ""}${row.location ? " · " + row.location : ""}</p>
+          <p class="row-sub" style="font-style:italic;">"${row.reason}"</p>
+          <p class="row-sub" style="margin-top:4px;">${timeAgo(row.created_at)}${row.status === "reviewed" ? " · Reviewed ✓" : ""}</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+          <button class="chip" data-review="${row.id}" data-current="${row.status}" style="padding:6px 12px;">
+            ${row.status === "reviewed" ? "Undo" : "Mark reviewed"}
+          </button>
+          <button class="icon-btn admin-delete-app" data-id="${row.id}" aria-label="Delete" style="width:32px;height:32px;align-self:center;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>`
+      )
+      .join("");
+
+    listMount.querySelectorAll("[data-review]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const current = btn.dataset.current;
+        btn.disabled = true;
+        const { error: updError } = await supabase
+          .from("applications")
+          .update({ status: current === "reviewed" ? "new" : "reviewed" })
+          .eq("id", btn.dataset.review);
+        btn.disabled = false;
+        if (updError) {
+          alert(`Couldn't update: ${updError.message}`);
+          return;
+        }
+        loadList();
+      });
+    });
+
+    listMount.querySelectorAll(".admin-delete-app").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this application?")) return;
+        const { error: delError } = await supabase.from("applications").delete().eq("id", btn.dataset.id);
+        if (delError) {
+          alert(`Couldn't delete: ${delError.message}`);
+          return;
+        }
+        loadList();
+      });
+    });
+  }
+
+  loadList();
+  return wrap;
+}
+
 export async function renderAdmin() {
   const authUser = await requireAuth();
   if (!authUser) return;
@@ -411,6 +491,7 @@ export async function renderAdmin() {
     contentMount.appendChild(renderPrayerInboxSection());
   }
   if (isAdmin) {
+    contentMount.appendChild(renderApplicationsSection());
     contentMount.appendChild(renderMediaLiveSection());
   }
 
