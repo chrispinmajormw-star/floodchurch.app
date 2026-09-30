@@ -219,7 +219,15 @@ export async function renderHome() {
   // Announcements
   const announcements = announcementsRes.data || [];
   document.getElementById("announcements").innerHTML =
-    announcements.map((a) => `<div class="announcement-row">${a.content}</div>`).join("") ||
+    announcements
+      .map(
+        (a) => `
+      <div class="announcement-row">
+        <div class="announcement-icon">${ICONS.bell}</div>
+        <p class="announcement-text">${a.content}</p>
+      </div>`
+      )
+      .join("") ||
     `<p style="color:var(--text-dim);font-size:14px;">No announcements right now.</p>`;
 
   // Ministries
