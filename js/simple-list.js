@@ -1,13 +1,14 @@
-// simple-list.js — shared renderer for "a list of named things you can
-// apply to" pages (Discipleship, Be Involved). Tapping a row opens an
-// application form; submitting it inserts into Supabase's `applications`
-// table, where it's visible to admins from the dashboard.
+// simple-list.js — shared "list of things you can apply to" logic, used by
+// Discipleship, Be Involved, and Profile's Serve in the Church section.
+// Tapping an item opens an application form; submitting it inserts into
+// Supabase's `applications` table, visible to admins from the dashboard.
 import { bootApp } from "./App.js";
 import { requireAuth } from "./auth.js";
 import { supabase } from "./supabaseClient.js";
 import { ICONS } from "./icons.js";
 
-function ensureModal() {
+/** Creates the shared application modal in the DOM once, if not already there. */
+export function ensureApplyModal() {
   if (document.getElementById("apply-modal")) return;
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
@@ -54,53 +55,11 @@ function ensureModal() {
   });
 }
 
-export async function renderSimpleListPage({
-  table,
-  title,
-  backHref = "profile.html",
-  mountId,
-  emptyId,
-  category,
-  requireLocation = true,
-}) {
-  const authUser = await requireAuth();
-  if (!authUser) return;
-
-  bootApp({ back: true, backHref, rightIcon: null, title });
-  ensureModal();
-
-  const mount = document.getElementById(mountId);
-  const emptyMsg = emptyId ? document.getElementById(emptyId) : null;
-
-  const [{ data, error }, { data: profile }] = await Promise.all([
-    supabase.from(table).select("*").order("sort_order"),
-    supabase.from("profiles").select("name").eq("id", authUser.id).maybeSingle(),
-  ]);
-
-  if (error) {
-    mount.innerHTML = `<p style="color:var(--red);font-size:14px;">${error.message}</p>`;
-    return;
-  }
-
-  const rows = data || [];
-  if (!rows.length) {
-    if (emptyMsg) emptyMsg.style.display = "block";
-    return;
-  }
-
-  mount.innerHTML = rows
-    .map(
-      (row) => `
-    <div class="list-row" style="cursor:pointer;" data-name="${row.name}">
-      <div class="row-body">
-        <p class="row-title">${row.name}</p>
-        ${row.description ? `<p class="row-sub">${row.description}</p>` : ""}
-      </div>
-      <div class="chevron">${ICONS.chevron}</div>
-    </div>`
-    )
-    .join("");
-
+/**
+ * Wires click-to-apply behavior onto every `[data-name]` element inside
+ * `container`. Call `ensureApplyModal()` once before this on the page.
+ */
+export function wireApplyRows(container, { authUser, profileName, category, requireLocation = true }) {
   const modal = document.getElementById("apply-modal");
   const form = document.getElementById("apply-form");
   const errorBox = document.getElementById("apply-error");
@@ -109,12 +68,12 @@ export async function renderSimpleListPage({
   const locationField = document.getElementById("apply-location-field");
   const locationInput = document.getElementById("apply-location");
 
-  mount.querySelectorAll("[data-name]").forEach((el) => {
+  container.querySelectorAll("[data-name]").forEach((el) => {
     el.addEventListener("click", () => {
       const itemName = el.dataset.name;
       document.getElementById("apply-modal-title").textContent = `Apply — ${itemName}`;
       document.getElementById("apply-reason-label").textContent = `Why are you interested in ${itemName}?`;
-      document.getElementById("apply-name").value = profile?.name || "";
+      document.getElementById("apply-name").value = profileName || "";
       document.getElementById("apply-email").value = authUser.email || "";
       document.getElementById("apply-phone").value = "";
       locationInput.value = "";
@@ -161,4 +120,55 @@ export async function renderSimpleListPage({
     submitBtn.textContent = "Submitted ✓";
     setTimeout(() => modal.classList.remove("open"), 1400);
   };
+}
+
+/** Full standalone page renderer — used by Discipleship and Be Involved. */
+export async function renderSimpleListPage({
+  table,
+  title,
+  backHref = "profile.html",
+  mountId,
+  emptyId,
+  category,
+  requireLocation = true,
+}) {
+  const authUser = await requireAuth();
+  if (!authUser) return;
+
+  bootApp({ back: true, backHref, rightIcon: null, title });
+  ensureApplyModal();
+
+  const mount = document.getElementById(mountId);
+  const emptyMsg = emptyId ? document.getElementById(emptyId) : null;
+
+  const [{ data, error }, { data: profile }] = await Promise.all([
+    supabase.from(table).select("*").order("sort_order"),
+    supabase.from("profiles").select("name").eq("id", authUser.id).maybeSingle(),
+  ]);
+
+  if (error) {
+    mount.innerHTML = `<p style="color:var(--red);font-size:14px;">${error.message}</p>`;
+    return;
+  }
+
+  const rows = data || [];
+  if (!rows.length) {
+    if (emptyMsg) emptyMsg.style.display = "block";
+    return;
+  }
+
+  mount.innerHTML = rows
+    .map(
+      (row) => `
+    <div class="list-row" style="cursor:pointer;" data-name="${row.name}">
+      <div class="row-body">
+        <p class="row-title">${row.name}</p>
+        ${row.description ? `<p class="row-sub">${row.description}</p>` : ""}
+      </div>
+      <div class="chevron">${ICONS.chevron}</div>
+    </div>`
+    )
+    .join("");
+
+  wireApplyRows(mount, { authUser, profileName: profile?.name, category, requireLocation });
 }

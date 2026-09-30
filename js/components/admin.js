@@ -100,11 +100,8 @@ const SECTIONS = [
     title: "Serve in the Church",
     roles: ["admin"],
     orderBy: "sort_order",
-    fields: [
-      { key: "name", label: "Team name (e.g. Media Team)", type: "text" },
-      { key: "link", label: "Registration form link (paste once the pastor sends it)", type: "text", optional: true },
-    ],
-    listLabel: (row) => `${row.name}${row.link ? " — has a form link" : " — no form link yet"}`,
+    fields: [{ key: "name", label: "Team name (e.g. Media Team)", type: "text" }],
+    listLabel: (row) => row.name,
   },
   {
     table: "discipleship_resources",

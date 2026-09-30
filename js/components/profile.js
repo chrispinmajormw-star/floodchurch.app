@@ -4,6 +4,7 @@ import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
+import { ensureApplyModal, wireApplyRows } from "../simple-list.js";
 
 const LIST_ROWS = [
   { key: "giving", title: "Giving history", icon: "heart", href: "giving-history.html" },
@@ -74,22 +75,20 @@ export async function renderProfile() {
   const ministryMount = document.getElementById("ministry-grid");
   const ministries = ministriesRes.data || [];
   ministryMount.innerHTML = ministries
-    .map((m) =>
-      m.link
-        ? `<a class="list-row" href="${m.link}" target="_blank" rel="noopener">
-             <div class="row-body"><p class="row-title">${m.name}</p></div>
-             <div class="chevron">${ICONS.chevron}</div>
-           </a>`
-        : `<div class="list-row" style="cursor:pointer;" data-noform="${m.name}">
-             <div class="row-body"><p class="row-title">${m.name}</p></div>
-             <div class="chevron">${ICONS.chevron}</div>
-           </div>`
+    .map(
+      (m) => `
+    <div class="list-row" style="cursor:pointer;" data-name="${m.name}">
+      <div class="row-body"><p class="row-title">${m.name}</p></div>
+      <div class="chevron">${ICONS.chevron}</div>
+    </div>`
     )
     .join("");
 
-  ministryMount.querySelectorAll("[data-noform]").forEach((el) => {
-    el.addEventListener("click", () => {
-      alert(`Registration for ${el.dataset.noform} isn't open yet — check back soon.`);
-    });
+  ensureApplyModal();
+  wireApplyRows(ministryMount, {
+    authUser,
+    profileName: profile.name,
+    category: "serve",
+    requireLocation: true,
   });
 }
