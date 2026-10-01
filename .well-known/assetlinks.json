@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.chrispinmajormw_star.twa",
+        "sha256_cert_fingerprints": ["D6:51:D9:ED:53:DC:CF:D0:B4:93:C9:9F:67:0B:54:4E:D9:F6:85:22:C8:4A:89:43:73:E1:EA:3A:84:6E:E8:C8"]
+      }
+    }]
