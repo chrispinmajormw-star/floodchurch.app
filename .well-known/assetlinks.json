@@ -2,7 +2,7 @@
       "relation": ["delegate_permission/common.handle_all_urls"],
       "target": {
         "namespace": "android_app",
-        "package_name": "io.github.chrispinmajormw_star.twa",
-        "sha256_cert_fingerprints": ["D6:51:D9:ED:53:DC:CF:D0:B4:93:C9:9F:67:0B:54:4E:D9:F6:85:22:C8:4A:89:43:73:E1:EA:3A:84:6E:E8:C8"]
+        "package_name": "ci.us.floodchurch.twa",
+        "sha256_cert_fingerprints": ["63:38:4D:D2:10:F0:4E:9E:2A:00:9B:6C:29:EB:A3:FC:5C:9E:2F:36:1C:BB:04:11:5E:2F:A7:59:4D:24:50:83"]
       }
     }]
