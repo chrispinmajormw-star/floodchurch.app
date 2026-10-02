@@ -1,3 +1,21 @@
+/* Smooth cross-fade between page navigations (Chrome/Android support this
+   natively — older browsers just ignore it and navigate instantly as before). */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root) {
+  animation: flood-fade-out 0.16s ease both;
+}
+::view-transition-new(root) {
+  animation: flood-fade-in 0.22s ease both;
+}
+@keyframes flood-fade-out {
+  to { opacity: 0; }
+}
+@keyframes flood-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
 :root {
   --bg: #0a0a0c;
   --surface: #15161a;
