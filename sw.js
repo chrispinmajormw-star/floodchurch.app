@@ -15,22 +15,17 @@ const DATA_CACHE = "flood-data"; // church content for the signed-in member (cle
 const BIBLE_CACHE = "flood-bible"; // saved Bible books (kept across updates; js/bible-text.js uses this name)
 const KEEP = [SHELL_CACHE, DATA_CACHE, BIBLE_CACHE];
 
-const SHELL_TIMEOUT = 6000; // after this long on a slow network, show the saved copy if there is one
-const DATA_TIMEOUT = 8000;
+// On a weak signal, don't make people wait: after this long, show the saved copy instead
+// (the fresh one still downloads in the background and is used next time).
+const SHELL_TIMEOUT = 2000; // pages, scripts, styles
+const DATA_TIMEOUT = 3000; // church content
 
-// Pre-saved on install so the main screens work offline even before they've been opened.
-// Anything that doesn't exist is quietly skipped.
+// Saved on install so the Home screen opens offline straight away. Kept SMALL on purpose:
+// everything else is saved as you open it, so installing/updating never hogs a slow connection.
 const PRECACHE = [
-  "index.html", "bible.html", "media.html", "give.html", "profile.html", "settings.html",
-  "notifications.html", "login.html", "events.html", "help.html", "watch.html", "sermons.html", "devotions.html",
-  "css/style.css", "manifest.json", "assets/floodwhite.svg", "assets/icons/icon-192.png",
+  "index.html", "login.html", "css/style.css", "manifest.json", "assets/floodwhite.svg", "assets/icons/icon-192.png",
   "js/App.js", "js/auth.js", "js/icons.js", "js/theme.js", "js/supabaseClient.js", "js/util.js",
-  "js/notifications.js", "js/push.js", "js/push-config.js", "js/site-settings.js",
-  "js/bible-books.js", "js/bible-text.js", "js/player.js",
-  "js/components/home.js", "js/components/bible.js", "js/components/media.js",
-  "js/components/settings.js", "js/components/notifications.js", "js/components/events.js",
-  "js/components/help.js", "js/components/give.js", "js/components/profile.js",
-  "js/components/watch.js", "js/components/sermons.js", "js/components/devotions.js",
+  "js/notifications.js", "js/site-settings.js", "js/components/home.js",
 ];
 
 self.addEventListener("install", (event) => {
@@ -40,8 +35,10 @@ self.addEventListener("install", (event) => {
       await Promise.all(
         PRECACHE.map(async (path) => {
           try {
+            const key = pageKey(new URL(path, self.registration.scope));
+            if (await cache.match(key)) return; // already saved — don't download it again
             const res = await fetch(path);
-            if (res && res.ok) await cache.put(pageKey(new URL(path, self.registration.scope)), res);
+            if (res && res.ok) await cache.put(key, res);
           } catch (e) {
             /* offline during install, or the file doesn't exist — skip it */
           }

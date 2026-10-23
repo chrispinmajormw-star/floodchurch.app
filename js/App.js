@@ -34,6 +34,8 @@ export function renderBottomNav() {
   }).join("");
 }
 
+const BELL_DELAY_MS = 1000;
+
 /** Puts the unread count on the bell (a red number), or removes it when there are none. */
 async function refreshBellBadge() {
   try {
@@ -85,7 +87,8 @@ export function renderTopbar({ rightIcon = "bell", rightHref = "#", back = false
     : `<span style="width:36px;"></span>`;
 
   mount.innerHTML = `${left}${center}${right}`;
-  if (isBell) refreshBellBadge();
+  // The unread count is a nice-to-have: let the page load its own content first.
+  if (isBell) setTimeout(refreshBellBadge, BELL_DELAY_MS);
 }
 
 /** Fetches and parses a JSON data file relative to the site root. */
