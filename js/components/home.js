@@ -1,26 +1,29 @@
-// components/home.js — renders Home from data/home.json (static bits: hero,
-// service times, verse of day, quick actions) plus LIVE Supabase content:
-// devotion, sermons, events, conference banner, podcasts, announcements,
-// ministries, and the live-stream state.
+// components/home.js — renders Home. Static bits (quick actions, fallback verse)
+// come from data/home.json; the banner text, service times, address and quick
+// giving copy come from the dashboard-managed site_settings table; and
+// everything else (devotion, sermons, events, conference, podcasts,
+// announcements, ministries, live status, verse of the day) is live Supabase data.
 import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
+import { getSiteSettings } from "../site-settings.js";
+import { escapeHtml, safeUrl } from "../util.js";
 
-function nextServiceDate(hour) {
+function nextServiceDate(day, hour) {
   const now = new Date();
   const target = new Date(now);
   target.setHours(hour, 0, 0, 0);
-  const dayDiff = (7 - now.getDay()) % 7;
+  const dayDiff = (day - now.getDay() + 7) % 7;
   target.setDate(now.getDate() + dayDiff);
   if (target <= now) target.setDate(target.getDate() + 7);
   return target;
 }
 
-function startCountdown(hour) {
+function startCountdown(day, hour) {
   const el = document.getElementById("countdown");
   function tick() {
-    const diff = nextServiceDate(hour) - new Date();
+    const diff = nextServiceDate(day, hour) - new Date();
     const d = Math.floor(diff / 86400000);
     const h = Math.floor((diff % 86400000) / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
@@ -38,8 +41,8 @@ function greetingForHour() {
   return "Good evening,";
 }
 
-// A handful of gradients to cycle through since sermons no longer carry a
-// hardcoded thumbGradient field once they're posted from the admin dashboard.
+// A handful of gradients to cycle through since sermons carry no thumbnail
+// once they're posted from the admin dashboard.
 const THUMB_GRADIENTS = [
   "linear-gradient(160deg, #1fb6c9, #0a4a52)",
   "linear-gradient(160deg, #a8500f, #241205)",
@@ -55,6 +58,7 @@ export async function renderHome() {
 
   const [
     home,
+    site,
     profileRes,
     devotionRes,
     sermonsRes,
@@ -67,6 +71,7 @@ export async function renderHome() {
     verseRes,
   ] = await Promise.all([
     loadData("data/home.json"),
+    getSiteSettings(),
     supabase.from("profiles").select("name").eq("id", authUser.id).maybeSingle(),
     supabase.from("devotions").select("*").order("devotion_date", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("sermons").select("*").order("created_at", { ascending: false }).limit(2),
@@ -93,36 +98,37 @@ export async function renderHome() {
     )
     .join("");
 
-  // Hero — headline stays static, but the LIVE badge and Watch Live button
+  // Hero — text comes from site settings, but the badge and Watch Live button
   // reflect the real media_live row.
   const live = liveRes.data;
-  document.getElementById("hero-tag").textContent = live?.is_live ? "LIVE NOW" : home.hero.tag;
-  document.getElementById("hero-headline").textContent = home.hero.headline;
+  document.getElementById("hero-tag").textContent = live?.is_live ? "LIVE NOW" : site.hero_tag;
+  document.getElementById("hero-headline").textContent = site.hero_headline;
   const watchLiveBtn = document.getElementById("watch-live-btn");
   if (watchLiveBtn) {
     watchLiveBtn.onclick = () => {
-      if (live?.is_live && live.stream_url) {
-        window.open(live.stream_url, "_blank");
+      const streamUrl = safeUrl(live?.stream_url);
+      if (live?.is_live && streamUrl) {
+        window.open(streamUrl, "_blank");
       } else {
         location.href = "media.html";
       }
     };
   }
 
-  document.getElementById("service-meta").innerHTML = `${home.service.days.join(
-    " &middot; "
-  )}<br>${home.service.address}`;
+  const serviceMeta = document.getElementById("service-meta");
+  serviceMeta.innerHTML = `${escapeHtml(site.service_times)}<br>${escapeHtml(site.service_address)}`;
+
   const verse = verseRes.data || home.verseOfDay;
   document.getElementById("verse-text").textContent = `\u201c${verse.text}\u201d \u2014 ${verse.reference}`;
 
   // Today's devotion
   const d = devotionRes.data;
   document.getElementById("devotion-card").innerHTML = d
-    ? `<h3>${d.title}</h3>
-       <p><b>${d.reference || ""}:</b> ${d.body}</p>
+    ? `<h3>${escapeHtml(d.title)}</h3>
+       <p><b>${escapeHtml(d.reference || "")}:</b> ${escapeHtml(d.body)}</p>
        <div class="devotion-meta">
-         <span class="devotion-date">${d.devotion_date}</span>
-         ${d.tag ? `<span class="tag-pill">${d.tag}</span>` : ""}
+         <span class="devotion-date">${escapeHtml(d.devotion_date)}</span>
+         ${d.tag ? `<span class="tag-pill">${escapeHtml(d.tag)}</span>` : ""}
        </div>`
     : `<p style="color:var(--text-dim);font-size:14px;">No devotion posted yet.</p>`;
 
@@ -132,15 +138,15 @@ export async function renderHome() {
     sermons
       .map(
         (s, i) => `
-      <div class="sermon-card" data-title="${s.title}">
-        <a href="${s.video_url}" target="_blank" rel="noopener">
+      <div class="sermon-card" data-title="${escapeHtml(s.title)}">
+        <a href="${escapeHtml(safeUrl(s.video_url) || "#")}" target="_blank" rel="noopener">
           <div class="sermon-thumb" style="background:${THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]}">
-            ${s.duration ? `<span class="sermon-duration">${s.duration}</span>` : ""}
+            ${s.duration ? `<span class="sermon-duration">${escapeHtml(s.duration)}</span>` : ""}
           </div>
         </a>
-        <button class="sermon-save" aria-label="Save sermon" data-title="${s.title}">${ICONS.bookmark}</button>
-        <p class="sermon-title">${s.title}</p>
-        <p class="sermon-sub">${s.speaker || ""}</p>
+        <button class="sermon-save" aria-label="Save sermon" data-title="${escapeHtml(s.title)}">${ICONS.bookmark}</button>
+        <p class="sermon-title">${escapeHtml(s.title)}</p>
+        <p class="sermon-sub">${escapeHtml(s.speaker || "")}</p>
       </div>`
       )
       .join("") || `<p style="color:var(--text-dim);font-size:14px;">No sermons posted yet.</p>`;
@@ -168,10 +174,10 @@ export async function renderHome() {
     events
       .map(
         (e) => `
-      <a class="event-row" href="events.html?id=${e.id}" style="text-decoration:none;color:inherit;">
+      <a class="event-row" href="events.html?id=${escapeHtml(e.id)}" style="text-decoration:none;color:inherit;">
         <div>
-          <p class="e-title">${e.title}</p>
-          <p class="e-sub">${new Date(e.event_date).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}${e.location ? " · " + e.location : ""}</p>
+          <p class="e-title">${escapeHtml(e.title)}</p>
+          <p class="e-sub">${escapeHtml(new Date(e.event_date).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }))}${e.location ? " · " + escapeHtml(e.location) : ""}</p>
         </div>
         <div class="chevron">${ICONS.chevron}</div>
       </a>`
@@ -183,21 +189,23 @@ export async function renderHome() {
   const bannerMount = document.getElementById("conference-banner");
   if (c) {
     bannerMount.style.display = "";
+    const ctaUrl = safeUrl(c.cta_link);
     bannerMount.innerHTML = `
-      <div class="eyebrow">${c.eyebrow || ""}</div>
-      <h3>${c.title}</h3>
-      <p>${c.dates || ""}</p>
-      ${c.cta_link ? `<button class="btn-dark" onclick="window.open('${c.cta_link}','_blank')">${c.cta_text || "Register"}</button>` : ""}`;
+      <div class="eyebrow">${escapeHtml(c.eyebrow || "")}</div>
+      <h3>${escapeHtml(c.title)}</h3>
+      <p>${escapeHtml(c.dates || "")}</p>
+      ${ctaUrl ? `<button class="btn-dark" id="conference-cta">${escapeHtml(c.cta_text || "Register")}</button>` : ""}`;
+    const ctaBtn = document.getElementById("conference-cta");
+    if (ctaBtn) ctaBtn.addEventListener("click", () => window.open(ctaUrl, "_blank"));
   } else {
     bannerMount.style.display = "none";
   }
 
-  // Quick giving (static copy, real destination)
-  const qg = home.quickGiving;
-  document.getElementById("quick-giving-text").textContent = qg.text;
+  // Quick giving (copy from site settings, destination is always the Give page)
+  document.getElementById("quick-giving-text").textContent = site.quick_giving_text;
   const qgBtn = document.getElementById("quick-giving-btn");
-  qgBtn.textContent = qg.cta;
-  qgBtn.addEventListener("click", () => (location.href = qg.link));
+  qgBtn.textContent = site.quick_giving_cta;
+  qgBtn.addEventListener("click", () => (location.href = "give.html"));
 
   // Podcasts
   const podcasts = podcastsRes.data || [];
@@ -205,11 +213,11 @@ export async function renderHome() {
     podcasts
       .map(
         (p) => `
-      <a class="podcast-row" href="${p.audio_url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;">
+      <a class="podcast-row" href="${escapeHtml(safeUrl(p.audio_url) || "#")}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;">
         <div class="mic">${ICONS.mic}</div>
         <div>
-          <div class="p-title">${p.title}</div>
-          <div class="p-sub">${p.sub || ""}</div>
+          <div class="p-title">${escapeHtml(p.title)}</div>
+          <div class="p-sub">${escapeHtml(p.sub || "")}</div>
         </div>
         <div class="play">${ICONS.playFilled}</div>
       </a>`
@@ -224,17 +232,16 @@ export async function renderHome() {
         (a) => `
       <div class="announcement-row">
         <div class="announcement-icon">${ICONS.bell}</div>
-        <p class="announcement-text">${a.content}</p>
+        <p class="announcement-text">${escapeHtml(a.content)}</p>
       </div>`
       )
-      .join("") ||
-    `<p style="color:var(--text-dim);font-size:14px;">No announcements right now.</p>`;
+      .join("") || `<p style="color:var(--text-dim);font-size:14px;">No announcements right now.</p>`;
 
   // Ministries
   const ministries = ministriesRes.data || [];
   document.getElementById("home-ministries").innerHTML = ministries
-    .map((m) => `<div class="ministry-chip">${m.name}</div>`)
+    .map((m) => `<div class="ministry-chip">${escapeHtml(m.name)}</div>`)
     .join("");
 
-  startCountdown(home.service.nextServiceHour);
+  startCountdown(site.service_day, site.service_hour);
 }

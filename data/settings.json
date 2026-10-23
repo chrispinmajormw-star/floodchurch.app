@@ -5,10 +5,10 @@
     { "title": "Manage payment methods", "sub": "Mpamba, Airtel Money, bank", "icon": "receipt", "href": null }
   ],
   "notifications": [
-    { "title": "Live service alerts", "sub": "Notify when Flood goes live", "field": "live_alerts" },
-    { "title": "Daily verse", "sub": "A reminder each morning", "field": "daily_verse" },
-    { "title": "Giving receipts", "sub": "Email a receipt after each gift", "field": "giving_receipts" },
-    { "title": "Ministry updates", "sub": "News from your ministries", "field": "ministry_updates" }
+    { "title": "Live service alerts", "sub": "When Flood goes live", "field": "live_alerts" },
+    { "title": "Daily verse & devotion", "sub": "When a new verse or devotion is posted", "field": "daily_verse" },
+    { "title": "Giving receipts", "sub": "A confirmation each time a gift is recorded", "field": "giving_receipts" },
+    { "title": "Ministry updates", "sub": "News from teams and groups", "field": "ministry_updates" }
   ],
   "media": [
     { "title": "Download over Wi-Fi only", "sub": "Save your mobile data", "field": "wifi_only_downloads" },
@@ -16,7 +16,7 @@
   ],
   "support": [
     { "title": "Help & FAQ", "icon": "help", "href": "help.html" },
-    { "title": "Contact the church office", "icon": "mail", "href": "mailto:office@floodchurch.org" }
+    { "title": "Contact the church office", "icon": "mail", "contact": true }
   ],
-  "version": "Flood Church \u00b7 v1.0.0"
+  "version": "Flood Church · v1.1.0"
 }

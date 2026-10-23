@@ -3,6 +3,8 @@
 // and a small helper for loading this page's JSON data.
 import { ICONS } from "./icons.js";
 import { applyTheme } from "./theme.js";
+import { supabase } from "./supabaseClient.js";
+import { getUnreadCount } from "./notifications.js";
 
 const NAV_ITEMS = [
   { href: "index.html", label: "Home", icon: "home" },
@@ -32,9 +34,34 @@ export function renderBottomNav() {
   }).join("");
 }
 
+/** Puts the unread count on the bell (a red number), or removes it when there are none. */
+async function refreshBellBadge() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const count = await getUnreadCount(session.user.id);
+    const bell = document.querySelector("#topbar [data-bell]");
+    if (!bell) return;
+    let badge = bell.querySelector(".bell-badge");
+    if (count > 0) {
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "bell-badge";
+        bell.appendChild(badge);
+      }
+      badge.textContent = count > 9 ? "9+" : String(count);
+    } else if (badge) {
+      badge.remove();
+    }
+  } catch (e) {
+    /* the bell still works without a badge */
+  }
+}
+
 /**
  * Renders the top bar into <header id="topbar">.
  * `rightIcon` is a key from ICONS, `rightHref` where it links to.
+ * The "bell" icon always opens the notifications page and shows an unread badge.
  * Pass `back: true` to show a back chevron on the left instead of the brand mark.
  */
 export function renderTopbar({ rightIcon = "bell", rightHref = "#", back = false, backHref = "profile.html", title = null } = {}) {
@@ -52,11 +79,13 @@ export function renderTopbar({ rightIcon = "bell", rightHref = "#", back = false
     ? `<div class="brand" style="justify-content:center;"><div class="word" style="text-align:center;"><b>${title}</b></div></div>`
     : "";
 
+  const isBell = rightIcon === "bell";
   const right = rightIcon
-    ? `<a class="icon-btn" href="${rightHref}" aria-label="Action">${ICONS[rightIcon]}</a>`
+    ? `<a class="icon-btn" href="${isBell ? "notifications.html" : rightHref}" aria-label="${isBell ? "Notifications" : "Action"}"${isBell ? " data-bell" : ""}>${ICONS[rightIcon]}</a>`
     : `<span style="width:36px;"></span>`;
 
   mount.innerHTML = `${left}${center}${right}`;
+  if (isBell) refreshBellBadge();
 }
 
 /** Fetches and parses a JSON data file relative to the site root. */

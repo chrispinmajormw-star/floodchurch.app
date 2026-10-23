@@ -1,11 +1,14 @@
 // components/settings.js — renders the Settings page from data/settings.json,
-// with notification/media toggles backed by Supabase's user_settings table
-// and a live Dark/Light theme + accent color picker (js/theme.js).
+// with notification/media toggles backed by Supabase's user_settings table,
+// a push-notification switch for this device, and a live Dark/Light theme +
+// accent color picker (js/theme.js).
 import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth, signOut } from "../auth.js";
 import { getTheme, getAccent, setTheme, setAccent, ACCENT_OPTIONS } from "../theme.js";
 import { supabase } from "../supabaseClient.js";
+import { getPushStatus, enablePush, disablePush } from "../push.js";
+import { getSiteSettings } from "../site-settings.js";
 
 const DEFAULT_SETTINGS = {
   live_alerts: true,
@@ -48,8 +51,71 @@ function supportRow(item) {
       <div class="chevron">${ICONS.chevron}</div>`;
   return item.href
     ? `<a class="list-row" href="${item.href}">${inner}</a>`
-    : `<div class="list-row">${inner}</div>`;
+    : `<div class="list-row" data-noop="${item.title}">${inner}</div>`;
 }
+
+// --- Push notifications for this device -------------------------------------
+
+function pushStatusText(status) {
+  const onIphone = /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+  switch (status) {
+    case "enabled":
+      return "On for this device";
+    case "disabled":
+      return "Off for this device — switch on to get alerts when the app is closed";
+    case "blocked":
+      return "Blocked — allow notifications in your phone or browser settings";
+    case "unconfigured":
+      return "Not available yet";
+    default:
+      return onIphone
+        ? "On iPhone, add the app to your Home Screen first (Share → Add to Home Screen)"
+        : "Not supported on this browser";
+  }
+}
+
+function pushRowHTML(status) {
+  const on = status === "enabled";
+  const locked = status === "unsupported" || status === "unconfigured" || status === "blocked";
+  return `
+    <div class="toggle-row">
+      <div>
+        <div class="t-title">Push notifications</div>
+        <div class="t-sub" id="push-sub">${pushStatusText(status)}</div>
+      </div>
+      <div class="switch${on ? " on" : ""}${locked ? " disabled" : ""}" id="push-switch"></div>
+    </div>`;
+}
+
+async function refreshPushRow() {
+  const status = await getPushStatus();
+  const sw = document.getElementById("push-switch");
+  const sub = document.getElementById("push-sub");
+  if (!sw || !sub) return;
+  sw.classList.toggle("on", status === "enabled");
+  sw.classList.toggle("disabled", status === "unsupported" || status === "unconfigured" || status === "blocked");
+  sub.textContent = pushStatusText(status);
+}
+
+function wirePushRow(authUser) {
+  const sw = document.getElementById("push-switch");
+  if (!sw) return;
+  sw.addEventListener("click", async () => {
+    if (sw.classList.contains("disabled") || sw.dataset.busy) return;
+    sw.dataset.busy = "1";
+    const turningOn = !sw.classList.contains("on");
+    try {
+      if (turningOn) await enablePush(authUser.id);
+      else await disablePush();
+    } catch (err) {
+      alert(err.message);
+    }
+    delete sw.dataset.busy;
+    await refreshPushRow();
+  });
+}
+
+// --- Appearance ---------------------------------------------------------------
 
 function appearanceHTML() {
   const theme = getTheme();
@@ -89,9 +155,11 @@ export async function renderSettings() {
 
   bootApp({ back: true, backHref: "profile.html", rightIcon: null, title: "Settings" });
 
-  const [data, settingsRes] = await Promise.all([
+  const [data, settingsRes, pushStatus, site] = await Promise.all([
     loadData("data/settings.json"),
     supabase.from("user_settings").select("*").eq("user_id", authUser.id).maybeSingle(),
+    getPushStatus(),
+    getSiteSettings(),
   ]);
 
   // First time this user hits Settings — create their row with defaults.
@@ -105,19 +173,28 @@ export async function renderSettings() {
     settings = created || DEFAULT_SETTINGS;
   }
 
+  // "Contact the church office" uses whatever email/phone the admin has saved.
+  const contactHref = site.contact_email
+    ? `mailto:${site.contact_email}`
+    : site.contact_phone
+      ? `tel:${site.contact_phone.replace(/\s+/g, "")}`
+      : null;
+  const support = data.support.map((item) => (item.contact ? { ...item, href: contactHref } : item));
+
   document.getElementById("account-group").innerHTML = data.account.map(accountRow).join("");
-  document.getElementById("notifications-group").innerHTML = data.notifications
-    .map((item) => toggleRow(item, settings))
-    .join("");
+  document.getElementById("notifications-group").innerHTML =
+    pushRowHTML(pushStatus) + data.notifications.map((item) => toggleRow(item, settings)).join("");
   document.getElementById("media-group").innerHTML = data.media
     .map((item) => toggleRow(item, settings))
     .join("");
-  document.getElementById("support-group").innerHTML = data.support.map(supportRow).join("");
+  document.getElementById("support-group").innerHTML = support.map(supportRow).join("");
   document.getElementById("app-version").textContent = data.version;
 
   const appearanceMount = document.getElementById("appearance-group");
   appearanceMount.innerHTML = appearanceHTML();
   wireAppearance(appearanceMount);
+
+  wirePushRow(authUser);
 
   // Real toggles — flip visually, then persist; roll back if the save fails.
   document.querySelectorAll("[data-toggle]").forEach((el) => {
@@ -146,6 +223,8 @@ export async function renderSettings() {
   });
 
   document.getElementById("logout-btn").addEventListener("click", async () => {
+    // Stop sending this account's alerts to this phone once they sign out.
+    await disablePush();
     await signOut(); // redirects to login.html
   });
 
