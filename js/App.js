@@ -95,9 +95,35 @@ export async function loadData(path) {
   return res.json();
 }
 
+/** Registers the service worker (offline support + push alerts). Safe to call on every page. */
+function registerServiceWorker() {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  const register = () => navigator.serviceWorker.register("sw.js").catch(() => {});
+  if (document.readyState === "complete") register();
+  else window.addEventListener("load", register);
+}
+
+/** A slim notice while the phone has no connection, so it's clear why things aren't updating. */
+function initOfflineBanner() {
+  if (typeof window === "undefined" || document.getElementById("offline-banner")) return;
+  const banner = document.createElement("div");
+  banner.id = "offline-banner";
+  banner.className = "offline-banner";
+  banner.textContent = "You\u2019re offline \u2014 showing what\u2019s saved on your phone.";
+  document.body.appendChild(banner);
+  const update = () => {
+    banner.hidden = navigator.onLine !== false;
+  };
+  window.addEventListener("online", update);
+  window.addEventListener("offline", update);
+  update();
+}
+
 /** Boots the shared chrome (topbar + bottom nav). Call once per page. */
 export function bootApp(topbarOptions) {
   applyTheme();
   renderTopbar(topbarOptions);
   renderBottomNav();
+  initOfflineBanner();
+  registerServiceWorker();
 }

@@ -1350,3 +1350,211 @@ a.notif-row:hover { border-color: #3a3b42; }
 .notify-check input { width: 18px; height: 18px; accent-color: var(--blue); }
 .post-status { font-size: 12.5px; color: var(--text-dim); margin: 10px 0 0; line-height: 1.5; }
 
+/* ===== Playback, offline, editing, Bible search ===== */
+
+/* Elements marked hidden must stay hidden even when a class sets their display */
+[hidden] { display: none !important; }
+
+/* --- Bible: word search results --- */
+.search-hit {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+.search-hit:hover { border-color: #3a3b42; }
+.search-hit b {
+  display: block;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.search-hit span {
+  display: block;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.reader-text mark,
+.search-hit mark {
+  background: var(--blue-dim);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+/* --- Player (sermons, podcasts, live) --- */
+.player-overlay { z-index: 60; } /* above the sheets (50) and the top bar (20) */
+.player-sheet { max-width: 640px; }
+.player-titles { flex: 1; min-width: 0; }
+.player-titles h2 {
+  font-size: 17px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.player-sub { color: var(--text-dim); font-size: 13px; margin: 3px 0 0; }
+.player-stage { margin-top: 4px; }
+.player-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.player-frame iframe,
+.player-frame video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+}
+.player-art {
+  width: 100%;
+  height: 150px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, var(--blue-dim), var(--surface-2));
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.player-art svg { width: 52px; height: 52px; }
+.player-audio { width: 100%; }
+.player-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.player-note { font-size: 13px; color: var(--text-dim); margin: 12px 0 0; line-height: 1.5; }
+.player-note a { color: var(--blue); font-weight: 600; }
+
+/* Tap-to-play sermon cards on Home */
+.sermon-play {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  position: relative;
+  text-align: left;
+}
+.sermon-playicon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sermon-playicon svg { width: 18px; height: 18px; margin-left: 2px; }
+
+/* --- Sermons library --- */
+.sermon-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.sermon-row:hover { border-color: #3a3b42; }
+.sermon-row-thumb {
+  position: relative;
+  width: 108px;
+  aspect-ratio: 16 / 10;
+  border-radius: 10px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.sermon-row-thumb .sermon-playicon { width: 34px; height: 34px; }
+.sermon-row-thumb .sermon-playicon svg { width: 15px; height: 15px; }
+.sermon-row-body { flex: 1; min-width: 0; }
+.sermon-row-body .sermon-title { margin: 0 0 3px; }
+.sermon-row-save { flex-shrink: 0; }
+.sermon-row-save svg { width: 20px; height: 20px; }
+.sermon-row-save.saved { color: var(--blue); }
+
+/* --- Devotions archive --- */
+.devo-item { padding: 4px 16px; margin-bottom: 12px; }
+.devo-item summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  cursor: pointer;
+}
+.devo-item summary::-webkit-details-marker { display: none; }
+.devo-item summary b { display: block; font-size: 15px; }
+.devo-meta { display: block; font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
+.devo-item[open] .faq-chevron { transform: rotate(90deg); }
+.devo-body { font-size: 14px; color: var(--text-dim); line-height: 1.7; margin: 0 0 16px; }
+.devo-body b { color: var(--text); }
+
+/* --- Offline notice --- */
+.offline-banner {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 10px);
+  z-index: 40;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  max-width: calc(100% - 32px);
+  text-align: center;
+}
+
+/* --- Admin: editing and reordering --- */
+.edit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--blue-dim);
+  border: 1px solid var(--blue);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.edit-banner-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.move-btns { display: flex; flex-direction: column; flex-shrink: 0; }
+.move-btns .icon-btn { width: 28px; height: 20px; }
+.move-btns .icon-btn svg { width: 16px; height: 16px; }
+.move-btns .icon-btn:disabled { opacity: 0.3; cursor: default; }
+.admin-edit svg,
+.admin-delete svg { width: 18px; height: 18px; }

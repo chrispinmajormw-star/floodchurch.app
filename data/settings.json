@@ -11,8 +11,8 @@
     { "title": "Ministry updates", "sub": "News from teams and groups", "field": "ministry_updates" }
   ],
   "media": [
-    { "title": "Download over Wi-Fi only", "sub": "Save your mobile data", "field": "wifi_only_downloads" },
-    { "title": "Auto-play next sermon", "sub": "", "field": "autoplay_next" }
+    { "title": "Download over Wi-Fi only", "sub": "Asks first before saving the Bible over mobile data", "field": "wifi_only_downloads" },
+    { "title": "Auto-play next sermon", "sub": "When one sermon or podcast ends, start the next", "field": "autoplay_next" }
   ],
   "support": [
     { "title": "Help & FAQ", "icon": "help", "href": "help.html" },

@@ -1,6 +1,10 @@
 // components/bible.js — full-page KJV reader (book/chapter picker, drop-cap
 // chapter numeral, floating prev/next) plus Daily Reading and Reading Plans
 // tucked behind icon buttons as bottom-sheet modals.
+//   • The Bible text is hosted in this app (data/kjv/…, see js/bible-text.js), so it
+//     loads fast, never depends on an outside service, and works offline once opened.
+//   • The search box understands references ("John 3:16", "rom 8:1-4", "psalm 23")
+//     AND plain words ("love one another").
 //   • Daily Reading shows the latest Verse of the Day and Today's Devotion
 //     posted from the dashboard.
 //   • Reading Plans come from the reading_plans table; progress is real
@@ -10,26 +14,10 @@ import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { BIBLE_BOOKS } from "../bible-books.js";
 import { escapeHtml } from "../util.js";
+import { getChapter, getVerses, parseReference, searchText, splitForHighlight } from "../bible-text.js";
 
 const LAST_READ_KEY = "flood-bible-last";
-const BIBLE_API = "https://bible-api.com";
-const FETCH_TIMEOUT_MS = 10000; // fail fast instead of hanging on a dead connection
-
-/** fetch() with a hard timeout, so a dead/blocked connection fails in ~10s, not 30-120s. */
-async function fetchWithTimeout(url) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    return await fetch(url, { signal: controller.signal });
-  } catch (err) {
-    if (err.name === "AbortError") {
-      throw new Error("Timed out reaching the Bible service — it may be down, or blocked on this network.");
-    }
-    throw new Error("Couldn't reach the Bible service — check your connection.");
-  } finally {
-    clearTimeout(timer);
-  }
-}
+const SEARCH_LIMIT = 50;
 
 function openModal(id) {
   document.getElementById(id).classList.add("open");
@@ -73,6 +61,9 @@ function initBibleReader() {
 
   bookSelect.innerHTML = BIBLE_BOOKS.map((b) => `<option value="${b.name}">${b.name}</option>`).join("");
 
+  // Only the most recent request may draw on the screen (a slow earlier one is ignored).
+  let currentRequest = 0;
+
   function populateChapters(bookName, selected) {
     const book = BIBLE_BOOKS.find((b) => b.name === bookName);
     const count = book ? book.chapters : 1;
@@ -82,48 +73,133 @@ function initBibleReader() {
     chapterSelect.value = selected || 1;
   }
 
-  function renderVerses(verses, chapterNum) {
-    if (!verses.length) {
-      textMount.innerHTML = "";
-      return;
-    }
-    const [first, ...rest] = verses;
-    const dropcap = `<span class="reader-dropcap">${chapterNum}</span>${first.text.trim()} `;
-    const restHtml = rest.map((v) => `<span class="verse-num">${v.verse}</span>${v.text.trim()} `).join("");
-    textMount.innerHTML = dropcap + restHtml;
+  function selectPassage(bookName, chapter) {
+    bookSelect.value = bookName;
+    populateChapters(bookName, chapter);
   }
 
-  async function loadChapter(bookName, chapter) {
+  function showError(message, retry) {
+    statusEl.innerHTML = `${escapeHtml(message)} ${retry ? '<button class="chip" id="retry-load" style="padding:4px 10px;margin-left:6px;">Try again</button>' : ""}`;
+    const retryBtn = document.getElementById("retry-load");
+    if (retryBtn && retry) retryBtn.addEventListener("click", retry);
+  }
+
+  function beginLoading(title, { banner = null } = {}) {
+    const id = ++currentRequest;
     statusEl.textContent = "Loading…";
     textMount.innerHTML = "";
-    titleEl.textContent = `${bookName} ${chapter}`;
-    bannerEl.style.display = String(chapter) === "1" ? "block" : "none";
-    bannerEl.textContent = bookName.toUpperCase();
+    titleEl.textContent = title;
+    bannerEl.style.display = banner ? "block" : "none";
+    if (banner) bannerEl.textContent = banner.toUpperCase();
+    return id;
+  }
 
+  /** A whole chapter, with the big chapter number in front of verse 1. */
+  async function showChapter(bookName, chapter) {
+    selectPassage(bookName, chapter);
+    const id = beginLoading(`${bookName} ${chapter}`, { banner: String(chapter) === "1" ? bookName : null });
     try {
-      const res = await fetchWithTimeout(`${BIBLE_API}/${encodeURIComponent(`${bookName} ${chapter}`)}?translation=kjv`);
-      if (!res.ok) throw new Error("Couldn't find that passage.");
-      const data = await res.json();
-      if (!data.verses || !data.verses.length) throw new Error("No text found for that passage.");
-
+      const verses = await getChapter(bookName, chapter);
+      if (id !== currentRequest) return;
       statusEl.textContent = "";
-      renderVerses(data.verses, chapter);
+      const [first, ...rest] = verses;
+      textMount.innerHTML =
+        `<span class="reader-dropcap">${chapter}</span>${escapeHtml(first.text)} ` +
+        rest.map((v) => `<span class="verse-num">${v.verse}</span>${escapeHtml(v.text)} `).join("");
       localStorage.setItem(LAST_READ_KEY, JSON.stringify({ book: bookName, chapter }));
     } catch (err) {
-      statusEl.innerHTML = `${escapeHtml(err.message)} <button class="chip" id="retry-load" style="padding:4px 10px;margin-left:6px;">Try again</button>`;
-      const retryBtn = document.getElementById("retry-load");
-      if (retryBtn) retryBtn.addEventListener("click", () => loadChapter(bookName, chapter));
+      if (id === currentRequest) showError(err.message, () => showChapter(bookName, chapter));
     }
   }
 
+  /** One verse or a short run of verses, with a shortcut to the full chapter. */
+  async function showVerses(bookName, chapter, from, to) {
+    selectPassage(bookName, chapter);
+    const range = to && to !== from ? `${from}\u2013${to}` : `${from}`;
+    const id = beginLoading(`${bookName} ${chapter}:${range}`);
+    try {
+      const verses = await getVerses(bookName, chapter, from, to);
+      if (id !== currentRequest) return;
+      statusEl.textContent = "";
+      textMount.innerHTML =
+        verses.map((v) => `<span class="verse-num">${v.verse}</span>${escapeHtml(v.text)} `).join("") +
+        `<div style="margin-top:18px;"><button class="chip" data-open-chapter="${escapeHtml(`${bookName} ${chapter}`)}">Read all of ${escapeHtml(bookName)} ${chapter}</button></div>`;
+    } catch (err) {
+      if (id === currentRequest) showError(err.message, () => showVerses(bookName, chapter, from, to));
+    }
+  }
+
+  /** Looks for words across the whole Bible and lists the verses that contain them. */
+  async function showWordSearch(query) {
+    const id = beginLoading("Search");
+    try {
+      const { results, truncated, terms } = await searchText(query, {
+        limit: SEARCH_LIMIT,
+        onProgress: (done, total) => {
+          if (id === currentRequest) statusEl.textContent = `Searching the Bible… ${done} of ${total} books`;
+        },
+      });
+      if (id !== currentRequest) return;
+      if (!terms.length) {
+        statusEl.textContent = "Type a verse like John 3:16, or at least one word to search for.";
+        return;
+      }
+      if (!results.length) {
+        statusEl.textContent = `No verses found for \u201c${query.trim()}\u201d. Try fewer or different words.`;
+        return;
+      }
+      statusEl.textContent = truncated
+        ? `Showing the first ${SEARCH_LIMIT} verses for \u201c${query.trim()}\u201d. Add more words to narrow it down.`
+        : `${results.length} verse${results.length === 1 ? "" : "s"} for \u201c${query.trim()}\u201d`;
+      textMount.innerHTML = results
+        .map((r) => {
+          const ref = `${r.book} ${r.chapter}:${r.verse}`;
+          const body = splitForHighlight(r.text, terms)
+            .map((part, i) => (i % 2 ? `<mark>${escapeHtml(part)}</mark>` : escapeHtml(part)))
+            .join("");
+          return `<button class="search-hit" data-ref="${escapeHtml(ref)}"><b>${escapeHtml(ref)}</b><span>${body}</span></button>`;
+        })
+        .join("");
+    } catch (err) {
+      if (id === currentRequest) showError(err.message, () => showWordSearch(query));
+    }
+  }
+
+  /** The search box: a Bible reference opens that passage; anything else is a word search. */
+  function runSearch(rawQuery) {
+    const query = String(rawQuery || "").trim();
+    if (!query) return;
+    const ref = parseReference(query);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (ref && ref.error) {
+      statusEl.textContent = ref.error;
+    } else if (ref && ref.verseStart) {
+      showVerses(ref.book, ref.chapter, ref.verseStart, ref.verseEnd);
+    } else if (ref) {
+      showChapter(ref.book, ref.chapter);
+    } else {
+      showWordSearch(query);
+    }
+  }
+
+  // Tapping a search result opens that verse; "Read all of …" opens the chapter.
+  textMount.addEventListener("click", (e) => {
+    const hit = e.target.closest(".search-hit");
+    if (hit) return runSearch(hit.dataset.ref);
+    const open = e.target.closest("[data-open-chapter]");
+    if (open) {
+      const ref = parseReference(open.dataset.openChapter);
+      if (ref && !ref.error) showChapter(ref.book, ref.chapter);
+    }
+  });
+
   bookSelect.addEventListener("change", () => {
-    populateChapters(bookSelect.value, 1);
-    loadChapter(bookSelect.value, 1);
+    showChapter(bookSelect.value, 1);
     closeModal("picker-modal");
   });
 
   chapterSelect.addEventListener("change", () => {
-    loadChapter(bookSelect.value, chapterSelect.value);
+    showChapter(bookSelect.value, Number(chapterSelect.value));
     closeModal("picker-modal");
   });
 
@@ -132,12 +208,11 @@ function initBibleReader() {
     let chapter = parseInt(chapterSelect.value, 10) - 1;
     let targetBookIndex = bookIndex;
     if (chapter < 1) {
-      targetBookIndex = Math.max(0, bookIndex - 1);
+      if (bookIndex === 0) return; // already at Genesis 1 — nothing before it
+      targetBookIndex = bookIndex - 1;
       chapter = BIBLE_BOOKS[targetBookIndex].chapters;
     }
-    bookSelect.value = BIBLE_BOOKS[targetBookIndex].name;
-    populateChapters(bookSelect.value, chapter);
-    loadChapter(bookSelect.value, chapter);
+    showChapter(BIBLE_BOOKS[targetBookIndex].name, chapter);
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
@@ -147,52 +222,13 @@ function initBibleReader() {
     let chapter = parseInt(chapterSelect.value, 10) + 1;
     let targetBookIndex = bookIndex;
     if (chapter > maxChapter) {
-      targetBookIndex = Math.min(BIBLE_BOOKS.length - 1, bookIndex + 1);
+      if (bookIndex === BIBLE_BOOKS.length - 1) return; // already at the end of Revelation
+      targetBookIndex = bookIndex + 1;
       chapter = 1;
     }
-    bookSelect.value = BIBLE_BOOKS[targetBookIndex].name;
-    populateChapters(bookSelect.value, chapter);
-    loadChapter(bookSelect.value, chapter);
+    showChapter(BIBLE_BOOKS[targetBookIndex].name, chapter);
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
-
-  // Free-text search — "John 3:16", "Psalm 23", "romans 8" all work,
-  // since bible-api.com parses the reference itself.
-  function runSearch(rawQuery) {
-    const query = String(rawQuery || "").trim();
-    if (!query) return;
-
-    const match = BIBLE_BOOKS.find((b) => query.toLowerCase().startsWith(b.name.toLowerCase()));
-    const chapterMatch = query.match(/(\d+)(?::\d+)?\s*$/);
-    if (match) {
-      populateChapters(match.name, chapterMatch ? chapterMatch[1] : 1);
-      bookSelect.value = match.name;
-      titleEl.textContent = `${match.name} ${chapterMatch ? chapterMatch[1] : ""}`.trim();
-      bannerEl.style.display = "none";
-    } else {
-      titleEl.textContent = "Search";
-      bannerEl.style.display = "none";
-    }
-
-    statusEl.textContent = "Loading…";
-    textMount.innerHTML = "";
-    fetchWithTimeout(`${BIBLE_API}/${encodeURIComponent(query)}?translation=kjv`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Couldn't find that passage.");
-        return res.json();
-      })
-      .then((data) => {
-        if (!data.verses || !data.verses.length) throw new Error("No text found for that passage.");
-        statusEl.textContent = "";
-        textMount.innerHTML = data.verses
-          .map((v) => `<span class="verse-num">${v.verse}</span>${v.text.trim()} `)
-          .join("");
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      })
-      .catch((err) => {
-        statusEl.textContent = `${err.message} Try a format like "John 3:16" or "Psalm 23".`;
-      });
-  }
 
   searchInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") runSearch(searchInput.value);
@@ -204,10 +240,7 @@ function initBibleReader() {
     const saved = JSON.parse(localStorage.getItem(LAST_READ_KEY));
     if (saved && BIBLE_BOOKS.some((b) => b.name === saved.book)) start = saved;
   } catch (e) {}
-
-  bookSelect.value = start.book;
-  populateChapters(start.book, start.chapter);
-  loadChapter(start.book, start.chapter);
+  showChapter(start.book, Number(start.chapter));
 
   return { runSearch };
 }

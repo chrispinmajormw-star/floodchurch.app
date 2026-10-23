@@ -1,7 +1,7 @@
 {
   "tiles": [
-    { "title": "Sermons", "sub": "Video & audio messages", "icon": "sermon" },
-    { "title": "Live TV", "sub": "Sundays 9 & 11 am", "icon": "tv" },
-    { "title": "Devotions", "sub": "Daily scripture", "icon": "devotion" }
+    { "title": "Sermons", "sub": "Video & audio messages", "icon": "sermon", "href": "sermons.html" },
+    { "title": "Live TV", "sub": "Sundays 9 & 11 am", "icon": "tv", "action": "live" },
+    { "title": "Devotions", "sub": "Daily scripture", "icon": "devotion", "href": "devotions.html" }
   ]
 }

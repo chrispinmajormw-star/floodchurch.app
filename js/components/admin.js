@@ -20,13 +20,14 @@ const WHEN_FORMAT = { weekday: "short", day: "numeric", month: "short", hour: "n
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 // `notify` (optional) adds an "Also notify members" tick-box to a section's form.
-// `autoOrder` puts each new item at the end of the list.
+// `autoOrder` puts each new item at the end of the list (or the top, for "start").
 const SECTIONS = [
   {
     table: "announcements",
     title: "Announcements",
     roles: ["admin"],
     orderBy: "sort_order",
+    autoOrder: "start", // newest announcement goes to the top
     fields: [{ key: "content", label: "Announcement text", type: "textarea" }],
     listLabel: (row) => row.content,
     notify: {
@@ -183,6 +184,7 @@ const SECTIONS = [
     title: "Serve in the Church",
     roles: ["admin"],
     orderBy: "sort_order",
+    autoOrder: true,
     fields: [{ key: "name", label: "Team name (e.g. Media Team)", type: "text" }],
     listLabel: (row) => row.name,
   },
@@ -191,6 +193,7 @@ const SECTIONS = [
     title: "Discipleship",
     roles: ["admin"],
     orderBy: "sort_order",
+    autoOrder: true,
     fields: [
       { key: "name", label: "Resource/course name", type: "text" },
       { key: "description", label: "Short description (optional)", type: "textarea", optional: true },
@@ -202,6 +205,7 @@ const SECTIONS = [
     title: "Be Involved in the Church",
     roles: ["admin"],
     orderBy: "sort_order",
+    autoOrder: true,
     fields: [
       { key: "name", label: "Name (e.g. Prayer Cafe)", type: "text" },
       { key: "description", label: "Short description (optional)", type: "textarea", optional: true },
@@ -230,13 +234,44 @@ async function uploadFile(file, folder) {
 
 const NEEDS_VISIBLE_LABEL = ["date", "datetime-local", "number"];
 
+const ICON_PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
+const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
+/** Turns what was typed into what the database stores. */
+function castValue(field, v) {
+  if (field.type === "number") return Number(v);
+  // Entered in the admin's local time → stored as the exact moment, so it shows correctly for everyone.
+  if (field.type === "datetime-local") return new Date(v).toISOString();
+  return v;
+}
+
+/** Turns a stored value back into something a form field can show (for editing). */
+function inputValue(field, stored) {
+  if (stored === null || stored === undefined) return "";
+  if (field.type === "date") return String(stored).slice(0, 10);
+  if (field.type === "datetime-local") {
+    const d = new Date(stored);
+    if (isNaN(d)) return "";
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  return String(stored);
+}
+
 function renderSection(section) {
+  const sortable = section.orderBy === "sort_order";
   const wrap = document.createElement("div");
   wrap.className = "card";
   wrap.style.marginBottom = "24px";
   wrap.innerHTML = `
     <h2 class="section-title" style="margin-top:0;">${escapeHtml(section.title)}</h2>
     <form class="admin-form">
+      <div class="edit-banner" hidden>
+        <span class="edit-banner-text"></span>
+        <button type="button" class="chip edit-cancel" style="padding:6px 12px;">Cancel</button>
+      </div>
       ${section.fields
         .map(
           (f) =>
@@ -266,28 +301,97 @@ function renderSection(section) {
   const form = wrap.querySelector(".admin-form");
   const listMount = wrap.querySelector(".admin-list");
   const statusEl = wrap.querySelector(".form-status");
+  const banner = wrap.querySelector(".edit-banner");
+  const bannerText = wrap.querySelector(".edit-banner-text");
+  const submitBtn = form.querySelector("button[type=submit]");
+  const notifyLabel = wrap.querySelector(".notify-check");
+
+  let rowsById = {};
   let maxOrder = 0;
+  let minOrder = 0;
+  let editingId = null;
+
+  function exitEdit() {
+    editingId = null;
+    form.reset();
+    banner.hidden = true;
+    submitBtn.textContent = "Post";
+    if (notifyLabel) notifyLabel.hidden = false;
+    statusEl.textContent = "";
+  }
+
+  function startEdit(row) {
+    editingId = row.id;
+    section.fields.forEach((f) => {
+      form.elements[f.key].value = inputValue(f, row[f.key]);
+    });
+    bannerText.textContent = `Editing: ${clip(section.listLabel(row), 60)}`;
+    banner.hidden = false;
+    submitBtn.textContent = "Save changes";
+    if (notifyLabel) notifyLabel.hidden = true; // edits don't re-notify; use "Send a Notification" if you want to
+    statusEl.textContent = "";
+    if (form.scrollIntoView) form.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  wrap.querySelector(".edit-cancel").addEventListener("click", exitEdit);
+
+  /** Moves one item up or down. Everything is renumbered 1…n so ties can't cause surprises. */
+  async function moveRow(id, dir) {
+    const { data, error } = await supabase.from(section.table).select("*").order("sort_order").order("id");
+    if (error) {
+      alert(`Couldn't reorder: ${error.message}`);
+      return;
+    }
+    const ids = data.map((r) => r.id);
+    const i = ids.indexOf(id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    const results = await Promise.all(ids.map((rid, idx) => supabase.from(section.table).update({ sort_order: idx + 1 }).eq("id", rid)));
+    const failed = results.find((r) => r.error);
+    if (failed) alert(`Couldn't reorder: ${failed.error.message}`);
+    loadList();
+  }
 
   async function loadList() {
-    const { data, error } = await supabase.from(section.table).select("*").order(section.orderBy);
+    let query = supabase.from(section.table).select("*").order(section.orderBy);
+    if (sortable) query = query.order("id"); // a fixed tie-breaker, so the order never jumps around
+    const { data, error } = await query;
     if (error) {
       listMount.innerHTML = `<p style="color:var(--red);font-size:13px;">${escapeHtml(error.message)}</p>`;
       return;
     }
+    rowsById = Object.fromEntries(data.map((r) => [r.id, r]));
     maxOrder = data.reduce((m, r) => Math.max(m, r.sort_order ?? 0), 0);
+    minOrder = data.reduce((m, r) => Math.min(m, r.sort_order ?? 0), 0);
+
+    const canMove = sortable && data.length > 1;
     listMount.innerHTML =
       data
         .map(
-          (row) => `
-      <div class="list-row" style="cursor:default;">
+          (row, idx) => `
+      <div class="list-row" data-row="${row.id}" style="cursor:default;">
         <div class="row-body"><p class="row-title" style="font-weight:500;">${escapeHtml(section.listLabel(row))}</p></div>
-        <button class="icon-btn admin-delete" data-id="${row.id}" aria-label="Delete" style="width:32px;height:32px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
+        ${
+          canMove
+            ? `<div class="move-btns">
+                 <button class="icon-btn admin-move" data-id="${row.id}" data-dir="-1" aria-label="Move up" ${idx === 0 ? "disabled" : ""}>${ICON_UP}</button>
+                 <button class="icon-btn admin-move" data-id="${row.id}" data-dir="1" aria-label="Move down" ${idx === data.length - 1 ? "disabled" : ""}>${ICON_DOWN}</button>
+               </div>`
+            : ""
+        }
+        <button class="icon-btn admin-edit" data-id="${row.id}" aria-label="Edit" style="width:32px;height:32px;">${ICON_PENCIL}</button>
+        <button class="icon-btn admin-delete" data-id="${row.id}" aria-label="Delete" style="width:32px;height:32px;">${ICON_X}</button>
       </div>`
         )
         .join("") || `<p style="color:var(--text-dim);font-size:13px;">Nothing posted yet.</p>`;
 
+    listMount.querySelectorAll(".admin-edit").forEach((btn) => {
+      btn.addEventListener("click", () => startEdit(rowsById[btn.dataset.id]));
+    });
+    listMount.querySelectorAll(".admin-move").forEach((btn) => {
+      btn.addEventListener("click", () => moveRow(btn.dataset.id, Number(btn.dataset.dir)));
+    });
     listMount.querySelectorAll(".admin-delete").forEach((btn) => {
       btn.addEventListener("click", async () => {
         if (!confirm("Delete this?")) return;
@@ -296,6 +400,7 @@ function renderSection(section) {
           alert(`Couldn't delete: ${delError.message}`);
           return;
         }
+        if (editingId === btn.dataset.id) exitEdit();
         loadList();
       });
     });
@@ -321,22 +426,46 @@ function renderSection(section) {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const submitBtn = form.querySelector("button[type=submit]");
     statusEl.textContent = "";
 
+    // ---- Saving changes to an existing item ---------------------------------
+    if (editingId) {
+      const changes = {};
+      section.fields.forEach((f) => {
+        const v = form.elements[f.key].value.trim();
+        changes[f.key] = v === "" ? null : castValue(f, v); // clearing an optional field really clears it
+      });
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Saving…";
+      const { data: updated, error } = await supabase.from(section.table).update(changes).eq("id", editingId).select();
+      submitBtn.disabled = false;
+      if (error) {
+        submitBtn.textContent = "Save changes";
+        alert(`Couldn't save: ${error.message}`);
+        return;
+      }
+      if (!updated || !updated.length) {
+        submitBtn.textContent = "Save changes";
+        alert("Nothing was changed — this account may not be allowed to edit that.");
+        return;
+      }
+      exitEdit();
+      statusEl.textContent = "Changes saved.";
+      loadList();
+      return;
+    }
+
+    // ---- Posting something new ---------------------------------------------
     // Empty optional fields are left out entirely so the database's own
     // defaults apply (e.g. "today" for dates) instead of failing on "".
     const payload = {};
     section.fields.forEach((f) => {
       const v = form.elements[f.key].value.trim();
       if (v === "") return;
-      if (f.type === "number") payload[f.key] = Number(v);
-      // Entered in the admin's local time → stored as the exact moment, so it
-      // shows correctly for everyone (it used to be saved as if it were UTC).
-      else if (f.type === "datetime-local") payload[f.key] = new Date(v).toISOString();
-      else payload[f.key] = v;
+      payload[f.key] = castValue(f, v);
     });
-    if (section.autoOrder) payload.sort_order = maxOrder + 1;
+    if (section.autoOrder === "start") payload.sort_order = minOrder - 1;
+    else if (section.autoOrder) payload.sort_order = maxOrder + 1;
 
     submitBtn.disabled = true;
     submitBtn.textContent = "Posting…";
