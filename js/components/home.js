@@ -9,7 +9,7 @@ import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { getSiteSettings } from "../site-settings.js";
 import { escapeHtml, safeUrl } from "../util.js";
-import { openPlayer, youtubeThumbnail } from "../player.js";
+import { youtubeThumbnail } from "../player.js";
 
 function nextServiceDate(day, hour) {
   const now = new Date();
@@ -77,7 +77,6 @@ export async function renderHome() {
     ministriesRes,
     liveRes,
     verseRes,
-    settingsRes,
   ] = await Promise.all([
     loadData("data/home.json"),
     getSiteSettings(),
@@ -91,7 +90,6 @@ export async function renderHome() {
     supabase.from("ministries").select("*").order("sort_order"),
     supabase.from("media_live").select("*").eq("id", 1).maybeSingle(),
     supabase.from("verse_of_day").select("*").order("verse_date", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("user_settings").select("autoplay_next").eq("user_id", authUser.id).maybeSingle(),
   ]);
 
   const displayName = profileRes.data?.name || authUser.email.split("@")[0];
@@ -149,24 +147,18 @@ export async function renderHome() {
       .map(
         (s, i) => `
       <div class="sermon-card" data-title="${escapeHtml(s.title)}">
-        <button class="sermon-play" data-index="${i}" aria-label="Play ${escapeHtml(s.title)}">
+        <a class="sermon-play" href="watch.html?kind=sermon&id=${encodeURIComponent(s.id)}" aria-label="Play ${escapeHtml(s.title)}">
           <div class="sermon-thumb" style="background:${thumbBackground(s, i)}">
             <span class="sermon-playicon">${ICONS.playFilled}</span>
             ${s.duration ? `<span class="sermon-duration">${escapeHtml(s.duration)}</span>` : ""}
           </div>
-        </button>
+        </a>
         <button class="sermon-save" aria-label="Save sermon" data-title="${escapeHtml(s.title)}">${ICONS.bookmark}</button>
         <p class="sermon-title">${escapeHtml(s.title)}</p>
         <p class="sermon-sub">${escapeHtml(s.speaker || "")}</p>
       </div>`
       )
       .join("") || `<p style="color:var(--text-dim);font-size:14px;">No sermons posted yet.</p>`;
-
-  const autoplayNext = Boolean(settingsRes.data?.autoplay_next);
-  const sermonItems = sermons.map((s) => ({ title: s.title, subtitle: s.speaker || "", url: s.video_url }));
-  document.querySelectorAll(".sermon-play").forEach((btn) => {
-    btn.addEventListener("click", () => openPlayer(sermonItems, Number(btn.dataset.index), { autoplayNext }));
-  });
 
   document.querySelectorAll(".sermon-save").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
@@ -230,28 +222,16 @@ export async function renderHome() {
     podcasts
       .map(
         (p, i) => `
-      <div class="podcast-row podcast-play" data-index="${i}" role="button" tabindex="0" style="cursor:pointer;">
+      <a class="podcast-row" href="watch.html?kind=podcast&id=${encodeURIComponent(p.id)}" style="text-decoration:none;color:inherit;">
         <div class="mic">${ICONS.mic}</div>
         <div>
           <div class="p-title">${escapeHtml(p.title)}</div>
           <div class="p-sub">${escapeHtml(p.sub || "")}</div>
         </div>
         <div class="play">${ICONS.playFilled}</div>
-      </div>`
+      </a>`
       )
       .join("") || `<p style="color:var(--text-dim);font-size:14px;padding:12px 4px;">No podcasts posted yet.</p>`;
-
-  const podcastItems = podcasts.map((p) => ({ title: p.title, subtitle: p.sub || "", url: p.audio_url }));
-  document.querySelectorAll(".podcast-play").forEach((row) => {
-    const go = () => openPlayer(podcastItems, Number(row.dataset.index), { autoplayNext });
-    row.addEventListener("click", go);
-    row.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        go();
-      }
-    });
-  });
 
   // Announcements
   const announcements = announcementsRes.data || [];

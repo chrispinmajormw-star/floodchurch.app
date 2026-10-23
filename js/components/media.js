@@ -5,7 +5,6 @@ import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
-import { openPlayer } from "../player.js";
 import { escapeHtml, safeUrl } from "../util.js";
 
 export async function renderMedia() {
@@ -14,17 +13,15 @@ export async function renderMedia() {
 
   bootApp({ rightIcon: "bell" });
 
-  const [data, podcastsRes, liveRes, settingsRes] = await Promise.all([
+  const [data, podcastsRes, liveRes] = await Promise.all([
     loadData("data/media.json"),
     supabase.from("podcasts").select("*").order("created_at", { ascending: false }),
     supabase.from("media_live").select("*").eq("id", 1).maybeSingle(),
-    supabase.from("user_settings").select("autoplay_next").eq("user_id", authUser.id).maybeSingle(),
   ]);
 
   const live = liveRes.data;
   const liveUrl = safeUrl(live?.stream_url);
   const isLiveNow = Boolean(live?.is_live && liveUrl);
-  const autoplayNext = Boolean(settingsRes.data?.autoplay_next);
 
   // ---- Tiles ----------------------------------------------------------------
   const tilesMount = document.getElementById("media-tiles");
@@ -48,7 +45,7 @@ export async function renderMedia() {
     const go = () => {
       if (tile.action === "live") {
         if (isLiveNow) {
-          openPlayer([{ title: "Live service", subtitle: live.schedule_text || "Flood Church", url: liveUrl }], 0);
+          location.href = "watch.html?kind=live";
         } else {
           alert(`We\u2019re not live right now.${live?.schedule_text ? " Services: " + live.schedule_text + "." : ""}`);
         }
@@ -73,31 +70,19 @@ export async function renderMedia() {
       .map(
         (p, i) => `
       <div class="podcast-row">
-        <div class="podcast-play" data-index="${i}" role="button" tabindex="0" style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;cursor:pointer;">
+        <a class="podcast-play" href="watch.html?kind=podcast&id=${encodeURIComponent(p.id)}" style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;text-decoration:none;color:inherit;">
           <div class="mic">${ICONS.mic}</div>
           <div>
             <div class="p-title">${escapeHtml(p.title)}</div>
             <div class="p-sub">${escapeHtml(p.sub || "")}</div>
           </div>
-        </div>
+        </a>
         <button class="icon-btn download-btn" aria-label="Save to Downloads" data-title="${escapeHtml(p.title)}" style="width:32px;height:32px;flex-shrink:0;">
           ${ICONS.downloads}
         </button>
       </div>`
       )
       .join("") || `<p style="color:var(--text-dim);font-size:14px;padding:12px 4px;">No podcasts posted yet.</p>`;
-
-  const podcastItems = podcasts.map((p) => ({ title: p.title, subtitle: p.sub || "", url: p.audio_url }));
-  podcastsMount.querySelectorAll(".podcast-play").forEach((el) => {
-    const go = () => openPlayer(podcastItems, Number(el.dataset.index), { autoplayNext });
-    el.addEventListener("click", go);
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        go();
-      }
-    });
-  });
 
   podcastsMount.querySelectorAll(".download-btn").forEach((btn) => {
     btn.addEventListener("click", async (e) => {

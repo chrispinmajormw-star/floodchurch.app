@@ -1392,28 +1392,18 @@ a.notif-row:hover { border-color: #3a3b42; }
   padding: 0 2px;
 }
 
-/* --- Player (sermons, podcasts, live) --- */
-.player-overlay { z-index: 60; } /* above the sheets (50) and the top bar (20) */
-.player-sheet { max-width: 640px; }
-.player-titles { flex: 1; min-width: 0; }
-.player-titles h2 {
-  font-size: 17px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.player-sub { color: var(--text-dim); font-size: 13px; margin: 3px 0 0; }
-.player-stage { margin-top: 4px; }
-.player-frame {
+/* --- Now playing page (sermons, podcasts, live) --- */
+.watch-stage { margin: 0 -4px; }
+.watch-frame {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #000;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
 }
-.player-frame iframe,
-.player-frame video {
+.watch-frame iframe,
+.watch-frame video {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -1421,9 +1411,38 @@ a.notif-row:hover { border-color: #3a3b42; }
   border: 0;
   background: #000;
 }
-.player-art {
+/* The picture with a big Play button — nothing plays until you press it */
+.watch-poster {
+  position: relative;
+  display: block;
   width: 100%;
-  height: 150px;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 14px;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+}
+.watch-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+}
+.watch-play svg { width: 28px; height: 28px; margin-left: 4px; }
+.watch-poster:active .watch-play { transform: translate(-50%, -50%) scale(0.94); }
+.watch-art {
+  width: 100%;
+  height: 170px;
   border-radius: 16px;
   background: linear-gradient(160deg, var(--blue-dim), var(--surface-2));
   color: var(--blue);
@@ -1432,17 +1451,23 @@ a.notif-row:hover { border-color: #3a3b42; }
   justify-content: center;
   margin-bottom: 12px;
 }
-.player-art svg { width: 52px; height: 52px; }
-.player-audio { width: 100%; }
-.player-controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 14px;
+.watch-art svg { width: 56px; height: 56px; }
+.watch-audio { width: 100%; }
+.watch-external {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 18px;
+  text-align: center;
 }
-.player-note { font-size: 13px; color: var(--text-dim); margin: 12px 0 0; line-height: 1.5; }
-.player-note a { color: var(--blue); font-weight: 600; }
+.watch-external p { color: var(--text-dim); font-size: 14px; margin: 0 0 14px; }
+.watch-tools { display: flex; gap: 10px; margin-top: 12px; }
+.watch-note { font-size: 13px; color: var(--text-dim); margin: 12px 0 0; line-height: 1.5; }
+.watch-note:empty { display: none; }
+.watch-note a { color: var(--blue); font-weight: 600; }
+.watch-title { font-size: 21px; font-weight: 800; line-height: 1.25; margin: 18px 0 4px; }
+.watch-sub { font-size: 14px; color: var(--text-dim); margin: 0 0 22px; }
+.sermon-row.now { border-color: var(--blue); background: var(--blue-dim); cursor: default; }
 
 /* Tap-to-play sermon cards on Home */
 .sermon-play {

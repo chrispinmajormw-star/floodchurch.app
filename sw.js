@@ -22,7 +22,7 @@ const DATA_TIMEOUT = 8000;
 // Anything that doesn't exist is quietly skipped.
 const PRECACHE = [
   "index.html", "bible.html", "media.html", "give.html", "profile.html", "settings.html",
-  "notifications.html", "login.html", "events.html", "help.html",
+  "notifications.html", "login.html", "events.html", "help.html", "watch.html", "sermons.html", "devotions.html",
   "css/style.css", "manifest.json", "assets/floodwhite.svg", "assets/icons/icon-192.png",
   "js/App.js", "js/auth.js", "js/icons.js", "js/theme.js", "js/supabaseClient.js", "js/util.js",
   "js/notifications.js", "js/push.js", "js/push-config.js", "js/site-settings.js",
@@ -30,6 +30,7 @@ const PRECACHE = [
   "js/components/home.js", "js/components/bible.js", "js/components/media.js",
   "js/components/settings.js", "js/components/notifications.js", "js/components/events.js",
   "js/components/help.js", "js/components/give.js", "js/components/profile.js",
+  "js/components/watch.js", "js/components/sermons.js", "js/components/devotions.js",
 ];
 
 self.addEventListener("install", (event) => {

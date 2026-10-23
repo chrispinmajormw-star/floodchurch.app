@@ -4,7 +4,7 @@ import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
-import { openPlayer, youtubeThumbnail } from "../player.js";
+import { youtubeThumbnail } from "../player.js";
 import { escapeHtml } from "../util.js";
 
 const THUMB_GRADIENTS = [
@@ -29,9 +29,8 @@ export async function renderSermons() {
   const mount = document.getElementById("sermon-list");
   const emptyMsg = document.getElementById("sermon-empty");
 
-  const [sermonsRes, settingsRes, savedRes] = await Promise.all([
+  const [sermonsRes, savedRes] = await Promise.all([
     supabase.from("sermons").select("*").order("created_at", { ascending: false }).limit(100),
-    supabase.from("user_settings").select("autoplay_next").eq("user_id", authUser.id).maybeSingle(),
     supabase.from("saved_sermons").select("sermon_title").eq("user_id", authUser.id),
   ]);
 
@@ -47,8 +46,6 @@ export async function renderSermons() {
   }
 
   const saved = new Set((savedRes.data || []).map((r) => r.sermon_title));
-  const autoplayNext = Boolean(settingsRes.data?.autoplay_next);
-  const items = sermons.map((s) => ({ title: s.title, subtitle: s.speaker || "", url: s.video_url }));
 
   mount.innerHTML = sermons
     .map(
@@ -67,7 +64,9 @@ export async function renderSermons() {
     .join("");
 
   mount.querySelectorAll(".sermon-row").forEach((row) => {
-    const go = () => openPlayer(items, Number(row.dataset.index), { autoplayNext });
+    const go = () => {
+      location.href = `watch.html?kind=sermon&id=${encodeURIComponent(sermons[Number(row.dataset.index)].id)}`;
+    };
     row.addEventListener("click", go);
     row.addEventListener("keydown", (e) => {
       if ((e.key === "Enter" || e.key === " ") && e.target === row) {
