@@ -20,6 +20,9 @@ export const SITE_DEFAULTS = {
   instagram_url: "",
   tiktok_url: "",
   website_url: "",
+  give_amounts: "2000,5000,10000,20000",
+  give_default_amount: 5000,
+  give_min_amount: 500,
 };
 
 export async function getSiteSettings() {

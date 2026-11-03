@@ -158,6 +158,18 @@ const SECTIONS = [
     },
   },
   {
+    table: "giving_funds",
+    title: "Giving Funds",
+    roles: ["admin"],
+    orderBy: "sort_order",
+    autoOrder: true,
+    fields: [
+      { key: "name", label: "Fund name (e.g. Building Fund)", type: "text" },
+      { key: "description", label: "Short description (optional)", type: "text", optional: true },
+    ],
+    listLabel: (row) => `${row.name}${row.description ? " — " + row.description : ""}`,
+  },
+  {
     table: "live_schedule",
     title: "Live Schedule",
     roles: ["admin"],
@@ -608,7 +620,7 @@ const SITE_FIELDS = [
   { key: "service_times", label: "Service times (shown under the countdown)", type: "text" },
   { key: "service_address", label: "Church address", type: "text" },
   { key: "service_day", label: "Countdown counts down to which day?", type: "select" },
-  { key: "service_hour", label: "Countdown hour (0–23, so 9 = 9:00 am, 17 = 5:00 pm)", type: "number" },
+  { key: "service_hour", label: "Countdown hour (0–23, so 9 = 9:00 am, 17 = 5:00 pm)", type: "number", min: 0, max: 23 },
   { key: "quick_giving_text", label: "Quick giving message on Home", type: "textarea" },
   { key: "quick_giving_cta", label: "Quick giving button text", type: "text" },
   { key: "contact_email", label: "Church office email (shown in Help)", type: "email", optional: true },
@@ -620,7 +632,15 @@ const SITE_FIELDS = [
   { key: "instagram_url", label: "Instagram link", type: "url", optional: true, group: "links" },
   { key: "tiktok_url", label: "TikTok link", type: "url", optional: true, group: "links" },
   { key: "website_url", label: "Website link", type: "url", optional: true, group: "links" },
+  // The Give page — these need supabase-payments.sql
+  { key: "give_amounts", label: "Quick amounts on the Give page (comma-separated, e.g. 2000, 5000, 10000, 20000)", type: "text", optional: true, skipBlank: true, group: "giving" },
+  { key: "give_default_amount", label: "Amount selected to begin with (MWK)", type: "number", min: 1, optional: true, skipBlank: true, group: "giving" },
+  { key: "give_min_amount", label: "Smallest gift allowed (MWK)", type: "number", min: 1, optional: true, skipBlank: true, group: "giving" },
 ];
+
+// A group of settings only appears once the SQL that adds its columns has been run.
+const GROUP_PROBE = { links: "youtube_url", giving: "give_amounts" };
+const GROUP_HINT = { links: "supabase-connect-links.sql (social links)", giving: "supabase-payments.sql (giving amounts)" };
 
 function renderSiteSettingsSection() {
   const wrap = document.createElement("div");
@@ -635,7 +655,7 @@ function renderSiteSettingsSection() {
     } else if (f.type === "select") {
       control = `<select class="auth-input" name="${f.key}">${DAYS.map((d, i) => `<option value="${i}">${d}</option>`).join("")}</select>`;
     } else {
-      const extra = f.type === "number" ? ' min="0" max="23" inputmode="numeric"' : "";
+      const extra = f.type === "number" ? ` min="${f.min ?? 0}"${f.max !== undefined ? ` max="${f.max}"` : ""} inputmode="numeric"` : "";
       control = `<input class="auth-input" type="${f.type}" name="${f.key}" ${req}${extra}>`;
     }
     return `<div class="auth-field"${f.group ? ` data-group="${f.group}"` : ""}><label>${escapeHtml(f.label)}</label>${control}</div>`;
@@ -653,10 +673,10 @@ function renderSiteSettingsSection() {
 
   const form = wrap.querySelector(".admin-form");
   const statusEl = wrap.querySelector(".form-status");
-  let hasLinkColumns = false; // the social-link columns come from supabase-connect-links.sql
+  const groupReady = { links: false, giving: false }; // set once the columns for each group are found
 
-  const showLinkFields = (on) => wrap.querySelectorAll('[data-group="links"]').forEach((el) => (el.hidden = !on));
-  showLinkFields(false);
+  const showGroup = (name, on) => wrap.querySelectorAll(`[data-group="${name}"]`).forEach((el) => (el.hidden = !on));
+  Object.keys(GROUP_PROBE).forEach((g) => showGroup(g, false));
 
   (async () => {
     const { data, error } = await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle();
@@ -665,10 +685,13 @@ function renderSiteSettingsSection() {
       return;
     }
     if (data) {
-      hasLinkColumns = "youtube_url" in data;
-      showLinkFields(hasLinkColumns);
+      Object.entries(GROUP_PROBE).forEach(([g, probe]) => {
+        groupReady[g] = probe in data;
+        showGroup(g, groupReady[g]);
+      });
       SITE_FIELDS.forEach((f) => (form.elements[f.key].value = data[f.key] ?? ""));
-      if (!hasLinkColumns) statusEl.textContent = "To add social links (YouTube, Facebook…), run supabase-connect-links.sql, then reopen this page.";
+      const missing = Object.keys(GROUP_PROBE).filter((g) => !groupReady[g]).map((g) => GROUP_HINT[g]);
+      if (missing.length) statusEl.textContent = `More settings are available once you run: ${missing.join(" and ")}. Then reopen this page.`;
     }
   })();
 
@@ -677,8 +700,9 @@ function renderSiteSettingsSection() {
     const btn = form.querySelector("button[type=submit]");
     const payload = { id: 1, updated_at: new Date().toISOString() };
     SITE_FIELDS.forEach((f) => {
-      if (f.group === "links" && !hasLinkColumns) return; // columns not there yet: save everything else as normal
+      if (f.group && !groupReady[f.group]) return; // columns not there yet: save everything else as normal
       const v = form.elements[f.key].value.trim();
+      if (v === "" && f.skipBlank) return; // leave the saved value alone rather than blanking a required setting
       if (f.type === "number" || f.type === "select") payload[f.key] = Number(v);
       else payload[f.key] = v === "" && f.optional ? null : v;
     });
@@ -800,6 +824,145 @@ function renderSendNotificationSection() {
   });
 
   loadRecent();
+  return wrap;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Giving report — what has been given, by fund, for a month / year / all time (admins only)
+// ---------------------------------------------------------------------------------------------
+const REPORT_PERIODS = [["month", "This month"], ["last", "Last month"], ["year", "This year"], ["all", "All time"]];
+
+/** [start, end) of a reporting period, in the viewer's own time. */
+export function periodRange(key, now = new Date()) {
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  if (key === "month") return [new Date(y, m, 1), new Date(y, m + 1, 1)];
+  if (key === "last") return [new Date(y, m - 1, 1), new Date(y, m, 1)];
+  if (key === "year") return [new Date(y, 0, 1), new Date(y + 1, 0, 1)];
+  return [new Date(2000, 0, 1), new Date(y + 100, 0, 1)];
+}
+
+/** One spreadsheet cell. Text a member typed (like their name) can't turn into a formula when opened in Excel. */
+export function csvCell(value) {
+  let s = String(value ?? "");
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+export function buildCsv(rows) {
+  const header = ["Date", "Name", "Fund", "Amount", "Currency", "Paid with", "Reference"];
+  const lines = rows.map((r) => [r.date, r.name, r.fund, r.amount, r.currency, r.method, r.ref].map(csvCell).join(","));
+  return [header.map(csvCell).join(","), ...lines].join("\r\n");
+}
+
+function renderGivingReportSection() {
+  const wrap = document.createElement("div");
+  wrap.className = "card";
+  wrap.style.marginBottom = "24px";
+  wrap.innerHTML = `
+    <h2 class="section-title" style="margin-top:0;">Giving Report</h2>
+    <div class="auth-field">
+      <select class="auth-input" id="report-period">${REPORT_PERIODS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select>
+    </div>
+    <div id="report-body"><p class="post-status">Loading…</p></div>`;
+  const select = wrap.querySelector("#report-period");
+  const body = wrap.querySelector("#report-body");
+  const money = (n) => `MWK ${Number(n).toLocaleString()}`;
+  const when = (iso) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+
+  async function namesFor(userIds) {
+    const names = {};
+    const ids = [...new Set(userIds)];
+    for (let i = 0; i < ids.length; i += 100) {
+      const { data } = await supabase.from("profiles").select("id, name").in("id", ids.slice(i, i + 100));
+      (data || []).forEach((p) => (names[p.id] = p.name));
+    }
+    return names;
+  }
+
+  async function load() {
+    body.innerHTML = `<p class="post-status">Loading…</p>`;
+    const [from, to] = periodRange(select.value);
+    const range = (q) => q.gte("created_at", from.toISOString()).lt("created_at", to.toISOString());
+
+    const { data: gifts, error } = await range(supabase.from("gifts").select("*")).order("created_at", { ascending: false }).limit(1000);
+    if (error) {
+      body.innerHTML = `<p style="color:var(--red);font-size:13px;">${escapeHtml(error.message)}</p>`;
+      return;
+    }
+    const attemptsRes = await range(supabase.from("payment_attempts").select("*").neq("status", "completed")).order("created_at", { ascending: false }).limit(50);
+    const open = attemptsRes.error ? [] : attemptsRes.data || [];
+
+    const real = gifts.filter((g) => g.provider !== "demo");
+    const demoCount = gifts.length - real.length;
+    const names = await namesFor([...real.map((g) => g.user_id), ...open.map((a) => a.user_id)]);
+    const nameOf = (id) => names[id] || "A member";
+
+    const total = real.reduce((sum, g) => sum + Number(g.amount), 0);
+    const byFund = {};
+    real.forEach((g) => {
+      byFund[g.fund] = byFund[g.fund] || { count: 0, total: 0 };
+      byFund[g.fund].count++;
+      byFund[g.fund].total += Number(g.amount);
+    });
+    const fundRows = Object.entries(byFund).sort((a, b) => b[1].total - a[1].total);
+
+    body.innerHTML = `
+      <p class="report-total"><b>${escapeHtml(money(total))}</b> from ${real.length} gift${real.length === 1 ? "" : "s"}</p>
+      ${gifts.length >= 1000 ? `<p class="post-status">Showing the first 1,000 gifts of this period.</p>` : ""}
+      ${
+        fundRows.length
+          ? `<div class="report-table">${fundRows
+              .map(([fund, f]) => `<div class="report-row"><span>${escapeHtml(fund)} <em>${f.count} gift${f.count === 1 ? "" : "s"}</em></span><b>${escapeHtml(money(f.total))}</b></div>`)
+              .join("")}</div>`
+          : `<p class="post-status">No gifts in this period.</p>`
+      }
+      <button class="btn btn-primary" id="report-csv" style="width:100%;padding:12px;margin:14px 0 4px;" ${real.length ? "" : "disabled"}>Download spreadsheet (CSV)</button>
+      ${demoCount ? `<p class="post-status">${demoCount} test gift${demoCount === 1 ? "" : "s"} (no real money) ${demoCount === 1 ? "is" : "are"} not counted. To delete them for good, run <code>delete from gifts where provider = 'demo';</code> in Supabase.</p>` : ""}
+      ${
+        real.length
+          ? `<h3 class="report-sub">Recent gifts</h3>${real
+              .slice(0, 25)
+              .map(
+                (g) => `<div class="list-row" style="cursor:default;">
+                  <div class="row-body"><p class="row-title" style="font-weight:600;">${escapeHtml(nameOf(g.user_id))}</p>
+                  <p class="row-sub">${escapeHtml(g.fund)} · ${escapeHtml(g.payment_method || "—")} · ${escapeHtml(when(g.created_at))}</p></div>
+                  <b class="report-amount">${escapeHtml(money(g.amount))}</b></div>`
+              )
+              .join("")}`
+          : ""
+      }
+      ${
+        open.length
+          ? `<h3 class="report-sub">Unfinished payments (${open.length})</h3>
+             <p class="post-status" style="margin-top:0;">Started but not completed. If a member says they paid, find their reference here.</p>${open
+               .slice(0, 10)
+               .map(
+                 (a) => `<div class="list-row" style="cursor:default;">
+                  <div class="row-body"><p class="row-title" style="font-weight:600;">${escapeHtml(nameOf(a.user_id))} · ${escapeHtml(money(a.amount))}</p>
+                  <p class="row-sub">${escapeHtml(a.fund)} · ${escapeHtml(a.status)} · ${escapeHtml(when(a.created_at))} · ${escapeHtml(a.tx_ref)}</p></div></div>`
+               )
+               .join("")}`
+          : ""
+      }`;
+
+    body.querySelector("#report-csv").addEventListener("click", () => {
+      const csv = buildCsv(
+        real.map((g) => ({ date: new Date(g.created_at).toISOString().slice(0, 10), name: nameOf(g.user_id), fund: g.fund, amount: g.amount, currency: g.currency || "MWK", method: g.payment_method || "", ref: g.tx_ref || "" }))
+      );
+      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }); // the leading mark makes Excel read accents correctly
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `flood-giving-${select.value}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    });
+  }
+
+  select.addEventListener("change", load);
+  load();
   return wrap;
 }
 
@@ -985,6 +1148,7 @@ export async function renderAdmin() {
   }
   if (isAdmin) {
     contentMount.appendChild(renderApplicationsSection());
+    contentMount.appendChild(renderGivingReportSection());
     contentMount.appendChild(renderMediaLiveSection());
     contentMount.appendChild(renderSiteSettingsSection());
   }

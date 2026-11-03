@@ -2,7 +2,7 @@
   "account": [
     { "title": "Edit profile", "sub": "Name, group, team", "icon": "user", "href": "edit-profile.html" },
     { "title": "Change password", "sub": "", "icon": "lock", "href": "edit-profile.html" },
-    { "title": "Manage payment methods", "sub": "Mpamba, Airtel Money, bank", "icon": "receipt", "href": null }
+    { "title": "Giving & receipts", "sub": "Your gifts, and how payments work", "icon": "receipt", "href": "giving-history.html" }
   ],
   "notifications": [
     { "title": "Live service alerts", "sub": "When Flood goes live", "field": "live_alerts" },
