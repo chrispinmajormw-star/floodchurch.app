@@ -6,6 +6,7 @@ import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { escapeHtml, safeUrl } from "../util.js";
+import { nextOccurrence, describeOccurrence } from "../schedule.js";
 
 export async function renderMedia() {
   const authUser = await requireAuth();
@@ -13,22 +14,30 @@ export async function renderMedia() {
 
   bootApp({ rightIcon: "bell" });
 
-  const [data, podcastsRes, liveRes] = await Promise.all([
+  const [data, podcastsRes, liveRes, scheduleRes] = await Promise.all([
     loadData("data/media.json"),
     supabase.from("podcasts").select("*").order("created_at", { ascending: false }),
     supabase.from("media_live").select("*").eq("id", 1).maybeSingle(),
+    supabase.from("live_schedule").select("*"),
   ]);
 
   const live = liveRes.data;
   const liveUrl = safeUrl(live?.stream_url);
   const isLiveNow = Boolean(live?.is_live && liveUrl);
+  const next = scheduleRes.error ? null : nextOccurrence(scheduleRes.data || []);
 
   // ---- Tiles ----------------------------------------------------------------
   const tilesMount = document.getElementById("media-tiles");
   tilesMount.innerHTML = data.tiles
     .map((tile, i) => {
       const isLiveTile = tile.action === "live";
-      const sub = isLiveTile && live ? (live.is_live ? "Live now" : live.schedule_text || tile.sub) : tile.sub;
+      const sub = isLiveTile
+        ? isLiveNow
+          ? "Live now"
+          : next
+            ? `Next: ${describeOccurrence(next)}`
+            : live?.schedule_text || tile.sub
+        : tile.sub;
       return `
       <div class="media-tile" data-tile="${i}" role="button" tabindex="0" style="cursor:pointer;">
         <div class="tile-icon">${ICONS[tile.icon]}</div>
@@ -44,11 +53,7 @@ export async function renderMedia() {
     const tile = data.tiles[Number(el.dataset.tile)];
     const go = () => {
       if (tile.action === "live") {
-        if (isLiveNow) {
-          location.href = "watch.html?kind=live";
-        } else {
-          alert(`We\u2019re not live right now.${live?.schedule_text ? " Services: " + live.schedule_text + "." : ""}`);
-        }
+        location.href = "live.html"; // the stream when live, otherwise the countdown and weekly schedule
       } else if (tile.href) {
         location.href = tile.href;
       }

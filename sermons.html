@@ -54,10 +54,23 @@
 
   <div class="page">
     <h1 class="page-title">Sermons</h1>
-    <p class="page-sub">Watch or listen to messages from Flood Church. Tap one to play it here in the app.</p>
+    <div class="sermon-shortcuts" id="sermon-shortcuts"></div>
 
+    <label class="search-field">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="sermon-search" type="search" placeholder="Search sermons" autocomplete="off" aria-label="Search sermons">
+    </label>
+
+    <div class="seg-tabs" role="tablist">
+      <button class="seg active" role="tab" data-tab="video" aria-selected="true">Video</button>
+      <button class="seg" role="tab" data-tab="audio" aria-selected="false">Audio</button>
+    </div>
+
+    <div class="chip-scroll" id="series-chips"></div>
+
+    <p class="list-count" id="sermon-count"></p>
     <div id="sermon-list"></div>
-    <p id="sermon-empty" style="display:none; color:var(--text-dim); font-size:14px;">No sermons posted yet.</p>
+    <p id="sermon-empty" style="display:none; color:var(--text-dim); font-size:14px;"></p>
   </div>
 
   <nav class="bottomnav" id="bottomnav"></nav>

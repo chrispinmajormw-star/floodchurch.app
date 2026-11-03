@@ -25,7 +25,7 @@ const DATA_TIMEOUT = 3000; // church content
 const PRECACHE = [
   "index.html", "login.html", "css/style.css", "manifest.json", "assets/floodwhite.svg", "assets/icons/icon-192.png",
   "js/App.js", "js/auth.js", "js/icons.js", "js/theme.js", "js/supabaseClient.js", "js/util.js",
-  "js/notifications.js", "js/site-settings.js", "js/components/home.js",
+  "js/notifications.js", "js/site-settings.js", "js/player.js", "js/schedule.js", "js/components/home.js",
 ];
 
 self.addEventListener("install", (event) => {

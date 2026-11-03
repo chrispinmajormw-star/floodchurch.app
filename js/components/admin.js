@@ -10,6 +10,7 @@ import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { sendBroadcast, describePush } from "../notifications.js";
 import { escapeHtml, timeAgo } from "../util.js";
+import { formatTime } from "../schedule.js";
 
 function clip(text, n = 140) {
   const t = String(text ?? "").trim();
@@ -129,9 +130,11 @@ const SECTIONS = [
       { key: "speaker", label: "Speaker", type: "text" },
       { key: "duration", label: "Duration (e.g. 48 min)", type: "text" },
       { key: "video_url", label: "YouTube link (or upload a video file below)", type: "text" },
+      { key: "series", label: "Series (optional, e.g. Kick-Off Series)", type: "text", optional: true },
+      { key: "sermon_date", label: "Date preached (leave empty for today)", type: "date", optional: true },
     ],
     fileField: { key: "video_url", accept: "video/mp4,video/*", folder: "sermons" },
-    listLabel: (row) => `${row.title} — ${row.speaker || ""}`,
+    listLabel: (row) => `${row.title} — ${row.speaker || ""}${row.series ? " · " + row.series : ""}`,
     notify: {
       defaultOn: false,
       build: (r) => ({ title: `New sermon: ${r.title}`, body: r.speaker || "", url: "index.html", category: "general" }),
@@ -153,6 +156,19 @@ const SECTIONS = [
       defaultOn: false,
       build: (r) => ({ title: `New podcast: ${r.title}`, body: r.sub || "", url: "media.html", category: "general" }),
     },
+  },
+  {
+    table: "live_schedule",
+    title: "Live Schedule",
+    roles: ["admin"],
+    orderBy: "day",
+    orderThen: "start_time",
+    fields: [
+      { key: "day", label: "Day", type: "select", cast: "int", options: DAYS.map((d, i) => [String(i), d]) },
+      { key: "start_time", label: "Start time", type: "time" },
+      { key: "title", label: "Name (e.g. First Service)", type: "text" },
+    ],
+    listLabel: (row) => `${DAYS[row.day]} ${formatTime(row.start_time)} — ${row.title}`,
   },
   {
     table: "reading_plans",
@@ -220,6 +236,11 @@ function fieldInput(field) {
   if (field.type === "textarea") {
     return `<textarea class="amount-input" style="border-radius:var(--radius-md); min-height:80px; font-weight:400; font-size:14.5px;" name="${field.key}" placeholder="${label}" ${req}></textarea>`;
   }
+  if (field.type === "select") {
+    return `<select class="auth-input" name="${field.key}" ${req}>${field.options
+      .map(([value, text]) => `<option value="${escapeHtml(value)}">${escapeHtml(text)}</option>`)
+      .join("")}</select>`;
+  }
   const extra = field.type === "number" ? ' min="1" inputmode="numeric"' : "";
   return `<input class="auth-input" type="${field.type}" name="${field.key}" placeholder="${label}" value="${escapeHtml(field.default || "")}" ${req}${extra}>`;
 }
@@ -232,7 +253,7 @@ async function uploadFile(file, folder) {
   return data.publicUrl;
 }
 
-const NEEDS_VISIBLE_LABEL = ["date", "datetime-local", "number"];
+const NEEDS_VISIBLE_LABEL = ["date", "datetime-local", "number", "select", "time"];
 
 const ICON_PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
@@ -241,7 +262,7 @@ const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 
 /** Turns what was typed into what the database stores. */
 function castValue(field, v) {
-  if (field.type === "number") return Number(v);
+  if (field.type === "number" || field.cast === "int") return Number(v);
   // Entered in the admin's local time → stored as the exact moment, so it shows correctly for everyone.
   if (field.type === "datetime-local") return new Date(v).toISOString();
   return v;
@@ -251,6 +272,7 @@ function castValue(field, v) {
 function inputValue(field, stored) {
   if (stored === null || stored === undefined) return "";
   if (field.type === "date") return String(stored).slice(0, 10);
+  if (field.type === "time") return String(stored).slice(0, 5); // "09:00:00" → "09:00"
   if (field.type === "datetime-local") {
     const d = new Date(stored);
     if (isNaN(d)) return "";
@@ -355,6 +377,7 @@ function renderSection(section) {
 
   async function loadList() {
     let query = supabase.from(section.table).select("*").order(section.orderBy);
+    if (section.orderThen) query = query.order(section.orderThen); // e.g. schedule: by day, then by time
     if (sortable) query = query.order("id"); // a fixed tie-breaker, so the order never jumps around
     const { data, error } = await query;
     if (error) {

@@ -72,9 +72,12 @@ export function renderTopbar({ rightIcon = "bell", rightHref = "#", back = false
 
   const left = back
     ? `<a class="icon-btn" href="${backHref}" aria-label="Back">${ICONS.back}</a>`
-    : `<div class="brand">
-         <div class="mark"><img src="assets/floodwhite.svg" alt="Flood Church logo" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'F'}))"></div>
-         <div class="word"><b>FLOOD</b><span>CHURCH</span></div>
+    : `<div class="left-group">
+         <button class="icon-btn" id="menu-btn" aria-label="Open menu">${ICONS.menu}</button>
+         <div class="brand">
+           <div class="mark"><img src="assets/floodwhite.svg" alt="Flood Church logo" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'F'}))"></div>
+           <div class="word"><b>FLOOD</b><span>CHURCH</span></div>
+         </div>
        </div>`;
 
   const center = title
@@ -87,6 +90,17 @@ export function renderTopbar({ rightIcon = "bell", rightHref = "#", back = false
     : `<span style="width:36px;"></span>`;
 
   mount.innerHTML = `${left}${center}${right}`;
+  // The side menu's code is only downloaded the first time someone taps the ☰ button.
+  const menuBtn = document.getElementById("menu-btn");
+  if (menuBtn) {
+    menuBtn.addEventListener("click", async () => {
+      try {
+        (await import("./menu.js")).toggleMenu();
+      } catch (e) {
+        /* offline and never opened the menu before: nothing to show */
+      }
+    });
+  }
   // The unread count is a nice-to-have: let the page load its own content first.
   if (isBell) setTimeout(refreshBellBadge, BELL_DELAY_MS);
 }

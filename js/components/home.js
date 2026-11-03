@@ -10,6 +10,7 @@ import { supabase } from "../supabaseClient.js";
 import { getSiteSettings } from "../site-settings.js";
 import { escapeHtml, safeUrl } from "../util.js";
 import { youtubeThumbnail } from "../player.js";
+import { nextOccurrence, countdownText } from "../schedule.js";
 
 function nextServiceDate(day, hour) {
   const now = new Date();
@@ -21,15 +22,11 @@ function nextServiceDate(day, hour) {
   return target;
 }
 
-function startCountdown(day, hour) {
+/** `getTarget()` returns the moment of the next service; the countdown re-checks it every second. */
+function startCountdown(getTarget) {
   const el = document.getElementById("countdown");
   function tick() {
-    const diff = nextServiceDate(day, hour) - new Date();
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    el.textContent = `${d}d ${h}h ${m}m ${s}s`;
+    el.textContent = countdownText(getTarget() - new Date());
   }
   tick();
   setInterval(tick, 1000);
@@ -76,6 +73,7 @@ export async function renderHome() {
     announcementsRes,
     ministriesRes,
     liveRes,
+    scheduleRes,
     verseRes,
   ] = await Promise.all([
     loadData("data/home.json"),
@@ -89,6 +87,7 @@ export async function renderHome() {
     supabase.from("announcements").select("*").order("sort_order"),
     supabase.from("ministries").select("*").order("sort_order"),
     supabase.from("media_live").select("*").eq("id", 1).maybeSingle(),
+    supabase.from("live_schedule").select("*"),
     supabase.from("verse_of_day").select("*").order("verse_date", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
@@ -113,13 +112,9 @@ export async function renderHome() {
   document.getElementById("hero-headline").textContent = site.hero_headline;
   const watchLiveBtn = document.getElementById("watch-live-btn");
   if (watchLiveBtn) {
+    // The Live TV page shows the stream when we're live, and the countdown + schedule when we're not.
     watchLiveBtn.onclick = () => {
-      const streamUrl = safeUrl(live?.stream_url);
-      if (live?.is_live && streamUrl) {
-        window.open(streamUrl, "_blank");
-      } else {
-        location.href = "media.html";
-      }
+      location.href = "live.html";
     };
   }
 
@@ -252,5 +247,7 @@ export async function renderHome() {
     .map((m) => `<div class="ministry-chip">${escapeHtml(m.name)}</div>`)
     .join("");
 
-  startCountdown(site.service_day, site.service_hour);
+  // Count down to the next service on the weekly schedule (falls back to the Home & Contact Details setting).
+  const schedule = scheduleRes.error ? [] : scheduleRes.data || [];
+  startCountdown(() => (schedule.length ? nextOccurrence(schedule).date : nextServiceDate(site.service_day, site.service_hour)));
 }
