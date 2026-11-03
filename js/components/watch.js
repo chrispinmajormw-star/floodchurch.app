@@ -8,6 +8,7 @@ import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { mountPlayer, parseMedia, youtubeThumbnail } from "../player.js";
 import { escapeHtml, safeUrl } from "../util.js";
+import { audioSupported, mountDownloadChip, savedList } from "../offline-audio.js";
 
 const GRADIENTS = [
   "linear-gradient(160deg, #1fb6c9, #0a4a52)",
@@ -33,8 +34,9 @@ export async function renderWatch() {
   bootApp({ back: true, backHref: cfg ? cfg.back : "media.html", rightIcon: null, title: cfg ? cfg.title : "Live" });
   const root = document.getElementById("watch-root");
 
-  const settingsRes = await supabase.from("user_settings").select("autoplay_next").eq("user_id", authUser.id).maybeSingle();
+  const settingsRes = await supabase.from("user_settings").select("autoplay_next, wifi_only_downloads").eq("user_id", authUser.id).maybeSingle();
   const autoplayNext = Boolean(settingsRes.data?.autoplay_next);
+  const wifiOnly = Boolean(settingsRes.data?.wifi_only_downloads);
 
   // ---- What are we playing? ---------------------------------------------------
   let items = [];
@@ -47,11 +49,16 @@ export async function renderWatch() {
     items = [{ id: "live", title: "Live service", subtitle: live.schedule_text || "Flood Church", url: live.stream_url }];
   } else {
     const { data, error } = await supabase.from(cfg.table).select("*").order("created_at", { ascending: false }).limit(50);
-    if (error) {
-      root.innerHTML = `<p style="color:var(--red);font-size:14px;">${escapeHtml(error.message)}</p>`;
-      return;
+    if (!error && data && data.length) {
+      items = data.map((r) => ({ id: r.id, title: r.title, subtitle: cfg.sub(r), url: r[cfg.urlField] }));
+    } else {
+      // No connection (or nothing loaded): fall back to what's downloaded on this phone, so it still plays.
+      items = savedList().filter((x) => x.kind === kind).map((x) => ({ id: x.id, title: x.title, subtitle: x.subtitle, url: x.url }));
+      if (!items.length && error) {
+        root.innerHTML = `<p style="color:var(--red);font-size:14px;">${escapeHtml(error.message)}</p>`;
+        return;
+      }
     }
-    items = (data || []).map((r) => ({ id: r.id, title: r.title, subtitle: cfg.sub(r), url: r[cfg.urlField] }));
   }
 
   let index = wantedId ? items.findIndex((i) => i.id === wantedId) : 0;
@@ -68,6 +75,7 @@ export async function renderWatch() {
   const playerMount = document.getElementById("watch-player");
   const upNext = document.getElementById("watch-upnext");
   let player = null;
+  let downloadChip = null;
 
   const playable = (i) => parseMedia(items[i].url).kind !== "external";
   const nextPlayable = (from, dir) => {
@@ -121,6 +129,8 @@ export async function renderWatch() {
 
   /** Shows one item. `autoplay` is true ONLY when the last one finished and "Auto-play next" is on. */
   function show(i, autoplay) {
+    if (downloadChip) downloadChip.destroy({ cancel: false }); // a download already started keeps going
+    downloadChip = null;
     if (player) player.destroy();
     index = i;
     const item = items[i];
@@ -141,6 +151,11 @@ export async function renderWatch() {
       onPrev: prev >= 0 ? () => show(prev, true) : null,
       onNext: next >= 0 ? () => show(next, true) : null,
     });
+    // A Download button next to the speed button, for audio files that can be saved to the phone.
+    const tools = playerMount.querySelector(".watch-tools");
+    if (kind !== "live" && audioSupported() && tools && !tools.hidden && parseMedia(item.url).kind === "audio") {
+      downloadChip = mountDownloadChip(tools, { url: item.url, title: item.title, subtitle: item.subtitle, kind, id: item.id }, { wifiOnly });
+    }
     renderUpNext();
   }
 

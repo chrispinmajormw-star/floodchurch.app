@@ -613,6 +613,13 @@ const SITE_FIELDS = [
   { key: "quick_giving_cta", label: "Quick giving button text", type: "text" },
   { key: "contact_email", label: "Church office email (shown in Help)", type: "email", optional: true },
   { key: "contact_phone", label: "Church office phone (optional)", type: "tel", optional: true },
+  // "Connect with us" page — these need supabase-connect-links.sql (group "links" is skipped until it's been run)
+  { key: "whatsapp_number", label: "WhatsApp number, with country code (e.g. +265 999 123 456)", type: "tel", optional: true, group: "links" },
+  { key: "youtube_url", label: "YouTube channel link", type: "url", optional: true, group: "links" },
+  { key: "facebook_url", label: "Facebook page link", type: "url", optional: true, group: "links" },
+  { key: "instagram_url", label: "Instagram link", type: "url", optional: true, group: "links" },
+  { key: "tiktok_url", label: "TikTok link", type: "url", optional: true, group: "links" },
+  { key: "website_url", label: "Website link", type: "url", optional: true, group: "links" },
 ];
 
 function renderSiteSettingsSection() {
@@ -631,7 +638,7 @@ function renderSiteSettingsSection() {
       const extra = f.type === "number" ? ' min="0" max="23" inputmode="numeric"' : "";
       control = `<input class="auth-input" type="${f.type}" name="${f.key}" ${req}${extra}>`;
     }
-    return `<div class="auth-field"><label>${escapeHtml(f.label)}</label>${control}</div>`;
+    return `<div class="auth-field"${f.group ? ` data-group="${f.group}"` : ""}><label>${escapeHtml(f.label)}</label>${control}</div>`;
   }).join("");
 
   wrap.innerHTML = `
@@ -646,6 +653,10 @@ function renderSiteSettingsSection() {
 
   const form = wrap.querySelector(".admin-form");
   const statusEl = wrap.querySelector(".form-status");
+  let hasLinkColumns = false; // the social-link columns come from supabase-connect-links.sql
+
+  const showLinkFields = (on) => wrap.querySelectorAll('[data-group="links"]').forEach((el) => (el.hidden = !on));
+  showLinkFields(false);
 
   (async () => {
     const { data, error } = await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle();
@@ -653,7 +664,12 @@ function renderSiteSettingsSection() {
       statusEl.textContent = `Run supabase-static-content.sql first (${error.message}).`;
       return;
     }
-    if (data) SITE_FIELDS.forEach((f) => (form.elements[f.key].value = data[f.key] ?? ""));
+    if (data) {
+      hasLinkColumns = "youtube_url" in data;
+      showLinkFields(hasLinkColumns);
+      SITE_FIELDS.forEach((f) => (form.elements[f.key].value = data[f.key] ?? ""));
+      if (!hasLinkColumns) statusEl.textContent = "To add social links (YouTube, Facebook…), run supabase-connect-links.sql, then reopen this page.";
+    }
   })();
 
   form.addEventListener("submit", async (e) => {
@@ -661,6 +677,7 @@ function renderSiteSettingsSection() {
     const btn = form.querySelector("button[type=submit]");
     const payload = { id: 1, updated_at: new Date().toISOString() };
     SITE_FIELDS.forEach((f) => {
+      if (f.group === "links" && !hasLinkColumns) return; // columns not there yet: save everything else as normal
       const v = form.elements[f.key].value.trim();
       if (f.type === "number" || f.type === "select") payload[f.key] = Number(v);
       else payload[f.key] = v === "" && f.optional ? null : v;

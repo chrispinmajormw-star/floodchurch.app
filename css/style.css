@@ -1772,3 +1772,22 @@ a.notif-row:hover { border-color: #3a3b42; }
 .schedule-title { font-size: 14px; color: var(--text-dim); }
 .schedule-time { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
 .schedule-tag { padding: 2px 7px; border-radius: 999px; background: var(--blue); color: #fff; font-size: 10px; font-weight: 800; }
+
+/* ===== Downloads ===== */
+.download-chip svg { width: 16px; height: 16px; }
+.download-chip.saved { color: var(--blue); border-color: var(--blue); }
+.download-chip.busy { color: var(--text); }
+.download-btn.saved { color: var(--blue); }
+.download-btn .pct { font-size: 10px; font-weight: 800; }
+.download-btn svg { width: 20px; height: 20px; }
+.downloads-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 4px 0 14px;
+}
+.downloads-summary b { display: block; font-size: 15px; }
+.downloads-summary span { font-size: 13px; color: var(--text-dim); }
+.dl-main { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; color: inherit; text-decoration: none; }
+.dl-row .icon-btn svg, .later-row .icon-btn svg { width: 18px; height: 18px; }

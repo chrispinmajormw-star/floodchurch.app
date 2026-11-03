@@ -14,6 +14,12 @@ export const SITE_DEFAULTS = {
   quick_giving_cta: "Give now",
   contact_email: "",
   contact_phone: "",
+  whatsapp_number: "",
+  youtube_url: "",
+  facebook_url: "",
+  instagram_url: "",
+  tiktok_url: "",
+  website_url: "",
 };
 
 export async function getSiteSettings() {

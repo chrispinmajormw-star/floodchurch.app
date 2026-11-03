@@ -23,6 +23,7 @@ const GROUPS = [
       { label: "Devotions", icon: "devotion", href: "devotions.html" },
       { label: "Podcasts", icon: "podcast", href: "media.html" },
       { label: "Saved sermons", icon: "bookmark", href: "saved-sermons.html" },
+      { label: "Downloads", icon: "downloads", href: "downloads.html" },
     ],
   },
   {
@@ -36,6 +37,7 @@ const GROUPS = [
   {
     title: "More",
     items: [
+      { label: "Connect with us", icon: "pin", href: "connect.html" },
       { label: "Settings", icon: "gear", href: "settings.html" },
       { label: "Help & FAQ", icon: "help", href: "help.html" },
     ],

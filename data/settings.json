@@ -11,7 +11,7 @@
     { "title": "Ministry updates", "sub": "News from teams and groups", "field": "ministry_updates" }
   ],
   "media": [
-    { "title": "Download over Wi-Fi only", "sub": "Asks first before saving the Bible over mobile data", "field": "wifi_only_downloads" },
+    { "title": "Download over Wi-Fi only", "sub": "Asks first before saving the Bible or audio over mobile data", "field": "wifi_only_downloads" },
     { "title": "Auto-play next sermon", "sub": "When one sermon or podcast ends, start the next", "field": "autoplay_next" }
   ],
   "support": [

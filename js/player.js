@@ -7,6 +7,7 @@
 // Audio and video keep their place per file and show lock-screen controls (Android).
 import { ICONS } from "./icons.js";
 import { escapeHtml, safeUrl } from "./util.js";
+import { isSavedLocally, openSavedAudio } from "./offline-audio.js";
 
 const SPEEDS = [1, 1.25, 1.5, 2, 0.75];
 const POS_PREFIX = "flood-pos:";
@@ -57,7 +58,7 @@ const savedSpeed = () => {
   const n = Number(localStorage.getItem(SPEED_KEY));
   return SPEEDS.includes(n) ? n : 1;
 };
-const posKey = (m) => POS_PREFIX + (m.currentSrc || m.src);
+const posKey = (m) => POS_PREFIX + ((m.dataset && m.dataset.src) || m.currentSrc || m.src);
 
 /**
  * Draws the player for one item into `container`.
@@ -71,6 +72,8 @@ const posKey = (m) => POS_PREFIX + (m.currentSrc || m.src);
 export function mountPlayer(container, item, { autoplay = false, onEnded, onPrev, onNext } = {}) {
   const info = parseMedia(item.url);
   let media = null;
+  let savedCopyUrl = null; // the address of a downloaded copy, released when the player closes
+  let closed = false;
   let ytListener = null;
   let lastSaved = 0;
 
@@ -117,7 +120,7 @@ export function mountPlayer(container, item, { autoplay = false, onEnded, onPrev
   }
 
   /** Audio / video files: the phone's own controls, no autoplay unless asked. */
-  function attachMedia(el) {
+  function attachMedia(el, startNow = true) {
     media = el;
     media.playbackRate = savedSpeed();
     media.addEventListener("loadedmetadata", () => {
@@ -143,10 +146,13 @@ export function mountPlayer(container, item, { autoplay = false, onEnded, onPrev
       media.playbackRate = next;
     });
 
-    if (autoplay) {
-      const started = media.play();
-      if (started && typeof started.catch === "function") started.catch(() => {});
-    }
+    if (autoplay && startNow) startPlaying();
+  }
+
+  function startPlaying() {
+    if (!media) return;
+    const started = media.play();
+    if (started && typeof started.catch === "function") started.catch(() => {});
   }
 
   function listenForYouTubeEnd(iframe) {
@@ -205,14 +211,30 @@ export function mountPlayer(container, item, { autoplay = false, onEnded, onPrev
     stage.innerHTML = `<div class="watch-frame"><video controls playsinline preload="metadata" src="${escapeHtml(info.url)}"></video></div>`;
     attachMedia(stage.querySelector("video"));
   } else if (info.kind === "audio") {
-    stage.innerHTML = `<div class="watch-art">${ICONS.mic}</div><audio class="watch-audio" controls preload="metadata" src="${escapeHtml(info.url)}"></audio>`;
-    attachMedia(stage.querySelector("audio"));
+    // A downloaded copy plays from the phone itself (so it works with no signal); otherwise from the web.
+    const downloaded = isSavedLocally(info.url);
+    stage.innerHTML = `<div class="watch-art">${ICONS.mic}</div><audio class="watch-audio" controls preload="metadata"${downloaded ? "" : ` src="${escapeHtml(info.url)}"`}></audio>`;
+    const audioEl = stage.querySelector("audio");
+    audioEl.dataset.src = info.url;
+    attachMedia(audioEl, !downloaded);
+    if (downloaded) {
+      openSavedAudio(info.url).then((copy) => {
+        if (closed) {
+          if (copy) URL.revokeObjectURL(copy);
+          return;
+        }
+        savedCopyUrl = copy;
+        audioEl.src = copy || info.url; // the saved copy was removed behind our back: fall back to the web
+        if (autoplay) startPlaying();
+      });
+    }
   } else {
     stage.innerHTML = `<div class="watch-external"><p>This link can\u2019t play inside the app.</p>${info.url ? `<a class="btn btn-primary" href="${escapeHtml(info.url)}" target="_blank" rel="noopener">Open link</a>` : ""}</div>`;
   }
 
   return {
     destroy() {
+      closed = true;
       savePosition(true);
       if (media) {
         try {
@@ -228,6 +250,10 @@ export function mountPlayer(container, item, { autoplay = false, onEnded, onPrev
         try {
           navigator.mediaSession.metadata = null;
         } catch (e) {}
+      }
+      if (savedCopyUrl) {
+        URL.revokeObjectURL(savedCopyUrl);
+        savedCopyUrl = null;
       }
       container.innerHTML = "";
     },

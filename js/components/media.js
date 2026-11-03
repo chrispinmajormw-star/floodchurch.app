@@ -7,6 +7,8 @@ import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { escapeHtml, safeUrl } from "../util.js";
 import { nextOccurrence, describeOccurrence } from "../schedule.js";
+import { parseMedia } from "../player.js";
+import { audioSupported, bindDownloadButton } from "../offline-audio.js";
 
 export async function renderMedia() {
   const authUser = await requireAuth();
@@ -14,11 +16,12 @@ export async function renderMedia() {
 
   bootApp({ rightIcon: "bell" });
 
-  const [data, podcastsRes, liveRes, scheduleRes] = await Promise.all([
+  const [data, podcastsRes, liveRes, scheduleRes, settingsRes] = await Promise.all([
     loadData("data/media.json"),
     supabase.from("podcasts").select("*").order("created_at", { ascending: false }),
     supabase.from("media_live").select("*").eq("id", 1).maybeSingle(),
     supabase.from("live_schedule").select("*"),
+    supabase.from("user_settings").select("wifi_only_downloads").eq("user_id", authUser.id).maybeSingle(),
   ]);
 
   const live = liveRes.data;
@@ -82,27 +85,21 @@ export async function renderMedia() {
             <div class="p-sub">${escapeHtml(p.sub || "")}</div>
           </div>
         </a>
-        <button class="icon-btn download-btn" aria-label="Save to Downloads" data-title="${escapeHtml(p.title)}" style="width:32px;height:32px;flex-shrink:0;">
+        <button class="icon-btn download-btn" aria-label="Download" data-index="${i}" style="width:36px;height:36px;flex-shrink:0;">
           ${ICONS.downloads}
         </button>
       </div>`
       )
       .join("") || `<p style="color:var(--text-dim);font-size:14px;padding:12px 4px;">No podcasts posted yet.</p>`;
 
+  // The round button on each podcast really downloads the audio to the phone (only for audio files that can be saved).
+  const wifiOnly = Boolean(settingsRes.data?.wifi_only_downloads);
   podcastsMount.querySelectorAll(".download-btn").forEach((btn) => {
-    btn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      const title = btn.dataset.title;
-      btn.disabled = true;
-      const { error } = await supabase
-        .from("downloads")
-        .insert({ user_id: authUser.id, title, kind: "podcast" });
-      btn.disabled = false;
-      if (error) {
-        alert(`Couldn't save "${title}": ${error.message}`);
-        return;
-      }
-      btn.style.color = "var(--blue)";
-    });
+    const p = podcasts[Number(btn.dataset.index)];
+    if (!p || !audioSupported() || parseMedia(p.audio_url).kind !== "audio") {
+      btn.remove();
+      return;
+    }
+    bindDownloadButton(btn, { url: p.audio_url, title: p.title, subtitle: p.sub || "", kind: "podcast", id: p.id }, { wifiOnly, compact: true });
   });
 }
