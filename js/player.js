@@ -198,11 +198,9 @@ export function mountPlayer(container, item, { autoplay = false, onEnded, onPrev
     const background = picture ? `url('${picture}') center/cover no-repeat, ${FALLBACK_BG}` : FALLBACK_BG;
     if (autoplay) loadYouTube();
     else showPoster(background, loadYouTube);
-    note.innerHTML = `Video not showing? <a href="${escapeHtml(info.url)}" target="_blank" rel="noopener">Open it in YouTube</a>`;
   } else if (info.kind === "vimeo") {
     if (autoplay) loadVimeo();
     else showPoster(FALLBACK_BG, loadVimeo);
-    note.innerHTML = `<a href="${escapeHtml(info.url)}" target="_blank" rel="noopener">Open it on Vimeo</a>`;
   } else if (info.kind === "video") {
     stage.innerHTML = `<div class="watch-frame"><video controls playsinline preload="metadata" src="${escapeHtml(info.url)}"></video></div>`;
     attachMedia(stage.querySelector("video"));

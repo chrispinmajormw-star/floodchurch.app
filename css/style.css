@@ -1135,7 +1135,7 @@ h2.section-title {
 .bible-header-icons { display: flex; gap: 2px; flex-shrink: 0; }
 
 .reader-page {
-  padding: 20px 22px calc(var(--nav-h) + 24px);
+  padding: 20px 22px calc(var(--nav-h) + 86px);
   position: relative;
 }
 .reader-status {
@@ -1186,13 +1186,20 @@ h2.section-title {
   color: var(--text);
 }
 
+/* Previous / next chapter arrows: pinned to the screen (just above the bottom bar), left and right.
+   They never move with the text, and don't creep up on a short chapter. */
 .reader-floating-nav {
-  position: sticky;
-  bottom: calc(var(--nav-h) + 14px);
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, 480px);
+  box-sizing: border-box;
+  padding: 0 18px;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 14px);
   display: flex;
   justify-content: space-between;
-  margin-top: 28px;
   pointer-events: none;
+  z-index: 45; /* above the page and the offline notice, below the pop-up sheets */
 }
 .reader-nav-btn {
   pointer-events: auto;
