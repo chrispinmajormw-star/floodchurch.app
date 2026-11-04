@@ -12,6 +12,7 @@ const CATEGORY_ICON = {
   devotion: "devotion",
   ministry: "ministries",
   receipt: "heart",
+  staff: "ministries",
   general: "bell",
 };
 

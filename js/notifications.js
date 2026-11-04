@@ -27,6 +27,7 @@ export const CATEGORY_LABELS = {
   devotion: "Devotion",
   ministry: "Ministry news",
   receipt: "Giving receipt",
+  staff: "Staff alert",
 };
 
 export function categoryAllowed(category, prefs) {
@@ -79,7 +80,13 @@ export async function markAllRead(userId, newestIso) {
  * The in-app part always works; push is best-effort and reports what happened.
  */
 export async function sendBroadcast({ title, body = "", url = "index.html", category = "general" }) {
-  const { error } = await supabase.from("notifications").insert({ title, body, url, category });
+  // This page sends the phone alert itself (below, so it can report how many phones got it), so it asks
+  // the database NOT to also send one automatically. (skip_push comes from supabase-auto-push.sql; if
+  // that hasn't been run yet there's no automatic push either, so a plain save is right.)
+  let { error } = await supabase.from("notifications").insert({ title, body, url, category, skip_push: true });
+  if (error && /skip_push/i.test(error.message)) {
+    ({ error } = await supabase.from("notifications").insert({ title, body, url, category }));
+  }
   if (error) throw new Error(error.message);
 
   const push = { ok: false, sent: 0 };

@@ -7,7 +7,7 @@ import { ICONS } from "../icons.js";
 import { requireAuth, signOut } from "../auth.js";
 import { getTheme, getAccent, setTheme, setAccent, ACCENT_OPTIONS } from "../theme.js";
 import { supabase } from "../supabaseClient.js";
-import { getPushStatus, enablePush, disablePush } from "../push.js";
+import { getPushStatus, enablePush, disablePush, sendTestPush } from "../push.js";
 import { getSiteSettings } from "../site-settings.js";
 import { BIBLE_BOOKS } from "../bible-books.js";
 import { savedBookCount, saveWholeBible, removeSavedBible } from "../bible-text.js";
@@ -86,7 +86,36 @@ function pushRowHTML(status) {
         <div class="t-sub" id="push-sub">${pushStatusText(status)}</div>
       </div>
       <div class="switch${on ? " on" : ""}${locked ? " disabled" : ""}" id="push-switch"></div>
+    </div>
+    <div id="push-test-holder">${testRowHTML(status)}</div>`;
+}
+
+/** "Send me a test": only offered once alerts are on for this phone. */
+function testRowHTML(status) {
+  if (status !== "enabled") return "";
+  return `
+    <div class="toggle-row">
+      <div>
+        <div class="t-title">Send me a test</div>
+        <div class="t-sub" id="push-test-sub">Check that alerts reach this phone</div>
+      </div>
+      <button class="chip" id="push-test-btn" style="padding:8px 14px;flex-shrink:0;">Send test</button>
     </div>`;
+}
+
+function wireTestRow() {
+  const btn = document.getElementById("push-test-btn");
+  const sub = document.getElementById("push-test-sub");
+  if (!btn || !sub) return;
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    sub.textContent = "Sending\u2026";
+    const result = await sendTestPush();
+    btn.disabled = false;
+    if (!result.ok) sub.textContent = result.message;
+    else if (result.sent > 0) sub.textContent = "Sent! It should arrive in a few seconds. If nothing appears, check this phone\u2019s notification settings.";
+    else sub.textContent = "Nothing reached this phone. Switch Push notifications off and on again, then try once more.";
+  });
 }
 
 async function refreshPushRow() {
@@ -97,6 +126,11 @@ async function refreshPushRow() {
   sw.classList.toggle("on", status === "enabled");
   sw.classList.toggle("disabled", status === "unsupported" || status === "unconfigured" || status === "blocked");
   sub.textContent = pushStatusText(status);
+  const holder = document.getElementById("push-test-holder");
+  if (holder) {
+    holder.innerHTML = testRowHTML(status);
+    wireTestRow();
+  }
 }
 
 function wirePushRow(authUser) {
@@ -288,6 +322,7 @@ export async function renderSettings() {
   wireAppearance(appearanceMount);
 
   wirePushRow(authUser);
+  wireTestRow();
   wireOfflineRow();
 
   // Real toggles — flip visually, then persist; roll back if the save fails.

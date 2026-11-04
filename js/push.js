@@ -87,3 +87,42 @@ export async function disablePush() {
     /* best effort — nothing to clean up if there was no subscription */
   }
 }
+
+/** The plain-English reason a server call failed (the server's own message when it sent one). */
+async function serverMessage(error, fallback) {
+  try {
+    if (error && error.context && typeof error.context.json === "function") {
+      const body = await error.context.json();
+      if (body && typeof body.error === "string") return body.error;
+    }
+  } catch (e) {
+    /* fall through */
+  }
+  return fallback;
+}
+
+/**
+ * Asks the server to send a test alert to THIS member's own phones.
+ * → { ok: true, sent: n }  or  { ok: false, message }
+ */
+export async function sendTestPush() {
+  const { data, error } = await supabase.functions.invoke("send-push", { body: { mode: "test" } });
+  if (error || !data) {
+    const raw = await serverMessage(error, "");
+    // The server's technical notes mean "not set up yet" — don't show members jargon.
+    const message = /configured|VAPID|secret/i.test(raw) ? "Phone alerts aren\u2019t switched on at the church\u2019s server yet." : "Couldn\u2019t send the test. Check your internet connection and try again.";
+    return { ok: false, message };
+  }
+  return { ok: true, sent: data.sent ?? 0 };
+}
+
+/** Staff only: is push set up? → { vapid, internal, devices, linked } (any part may be null if it couldn't be checked). */
+export async function getPushHealth() {
+  const [fn, rpc] = await Promise.all([
+    supabase.functions.invoke("send-push", { body: { mode: "status" } }).catch(() => ({ error: true })),
+    supabase.rpc("push_setup_status").then((r) => r, () => ({ error: true })),
+  ]);
+  const status = fn && !fn.error && fn.data ? fn.data : null;
+  const linked = rpc && !rpc.error && rpc.data ? Boolean(rpc.data.linked) : null;
+  return { vapid: status ? Boolean(status.vapid) : null, internal: status ? Boolean(status.internal) : null, devices: status ? Number(status.devices) : null, linked };
+}

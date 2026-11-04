@@ -6,4 +6,5 @@
 //   • The PUBLIC key goes below. It is safe to commit to GitHub.
 //   • The PRIVATE key never goes in this repo. It is stored only as a
 //     Supabase secret (see the setup steps that came with this update).
-export const VAPID_PUBLIC_KEY = "PASTE-VAPID-PUBLIC-KEY-HERE";
+export const VAPID_PUBLIC_KEY = "BGz6eMWd6KYcVig7RhwJJ2vttXS8ez6fvorZKskxJNdkqdZvK8Vra16iA3N2egFWfYSmCrwFJNYVwc7HlwRsJA0";
+

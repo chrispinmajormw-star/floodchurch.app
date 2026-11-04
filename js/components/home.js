@@ -11,6 +11,7 @@ import { getSiteSettings } from "../site-settings.js";
 import { escapeHtml, safeUrl } from "../util.js";
 import { youtubeThumbnail } from "../player.js";
 import { nextOccurrence, countdownText } from "../schedule.js";
+import { getPushStatus, enablePush } from "../push.js";
 
 function nextServiceDate(day, hour) {
   const now = new Date();
@@ -47,6 +48,61 @@ const THUMB_GRADIENTS = [
   "linear-gradient(160deg, #6b4fd6, #1c1240)",
   "linear-gradient(160deg, #2f8bff, #0b1d3a)",
 ];
+
+const PUSH_NUDGE_KEY = "flood-push-nudge";
+const PUSH_NUDGE_QUIET_DAYS = 14;
+
+/**
+ * A one-tap invitation to switch on phone alerts. Shown only when this phone can receive them and
+ * hasn't, and not again for two weeks after "Not now". (If someone taps Block in the phone's own
+ * prompt, the app stops asking: the phone itself then says "blocked".)
+ */
+async function offerPush(authUser) {
+  try {
+    const last = Number(localStorage.getItem(PUSH_NUDGE_KEY));
+    if (last && Date.now() - last < PUSH_NUDGE_QUIET_DAYS * 86400000) return;
+    if ((await getPushStatus()) !== "disabled") return;
+  } catch (e) {
+    return;
+  }
+  const hero = document.querySelector(".hero");
+  if (!hero || document.getElementById("home-push-banner")) return;
+
+  const banner = document.createElement("div");
+  banner.className = "push-banner";
+  banner.id = "home-push-banner";
+  banner.style.display = "flex";
+  banner.innerHTML = `
+    <div class="push-banner-text">
+      <b>Get alerts on your phone</b>
+      <span>Know when we go live, when a new message is posted, and when there\u2019s news from the church.</span>
+    </div>
+    <div class="push-banner-actions">
+      <button class="btn btn-primary" id="home-push-on">Turn on</button>
+      <button class="push-banner-dismiss" id="home-push-later">Not now</button>
+    </div>`;
+  hero.before(banner);
+
+  document.getElementById("home-push-later").addEventListener("click", () => {
+    localStorage.setItem(PUSH_NUDGE_KEY, String(Date.now()));
+    banner.remove();
+  });
+  const onBtn = document.getElementById("home-push-on");
+  onBtn.addEventListener("click", async () => {
+    onBtn.disabled = true;
+    onBtn.textContent = "Turning on\u2026";
+    try {
+      await enablePush(authUser.id);
+      banner.innerHTML = `<div class="push-banner-text"><b>You\u2019re all set</b><span>Alerts are on for this phone.</span></div>`;
+      setTimeout(() => banner.remove(), 3500);
+    } catch (err) {
+      localStorage.setItem(PUSH_NUDGE_KEY, String(Date.now()));
+      onBtn.disabled = false;
+      onBtn.textContent = "Turn on";
+      alert(err.message);
+    }
+  });
+}
 
 /** A real YouTube picture when the sermon is a YouTube link, otherwise a coloured gradient. */
 function thumbBackground(sermon, i) {
@@ -250,4 +306,6 @@ export async function renderHome() {
   // Count down to the next service on the weekly schedule (falls back to the Home & Contact Details setting).
   const schedule = scheduleRes.error ? [] : scheduleRes.data || [];
   startCountdown(() => (schedule.length ? nextOccurrence(schedule).date : nextServiceDate(site.service_day, site.service_hour)));
+
+  offerPush(authUser); // not awaited: it must never hold up the page
 }

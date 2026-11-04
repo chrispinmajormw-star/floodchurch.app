@@ -11,6 +11,7 @@ import { supabase } from "../supabaseClient.js";
 import { sendBroadcast, describePush } from "../notifications.js";
 import { escapeHtml, timeAgo } from "../util.js";
 import { formatTime } from "../schedule.js";
+import { getPushHealth, sendTestPush } from "../push.js";
 
 function clip(text, n = 140) {
   const t = String(text ?? "").trim();
@@ -966,6 +967,51 @@ function renderGivingReportSection() {
   return wrap;
 }
 
+// ---------------------------------------------------------------------------------------------
+// Phone Alerts Status — is push set up, and does it reach MY phone? (admins and pastors)
+// ---------------------------------------------------------------------------------------------
+function renderPushStatusSection() {
+  const wrap = document.createElement("div");
+  wrap.className = "card";
+  wrap.style.marginBottom = "24px";
+  wrap.innerHTML = `
+    <h2 class="section-title" style="margin-top:0;">Phone Alerts Status</h2>
+    <div id="push-health"><p class="post-status">Checking…</p></div>
+    <button class="btn btn-primary" id="push-test" style="width:100%;padding:12px;margin-top:12px;">Send a test to my phone</button>
+    <p class="post-status" id="push-test-status"></p>`;
+  const health = wrap.querySelector("#push-health");
+
+  const row = (ok, good, bad, unknown) => {
+    const cls = ok === true ? "status-ok" : ok === false ? "status-bad" : "status-unknown";
+    const mark = ok === true ? "\u2713" : ok === false ? "\u2717" : "?";
+    return `<div class="status-row ${cls}"><span class="status-mark">${mark}</span><span>${escapeHtml(ok === true ? good : ok === false ? bad : unknown)}</span></div>`;
+  };
+
+  async function load() {
+    const h = await getPushHealth();
+    health.innerHTML =
+      row(h.vapid, "The server's alert keys are set up", "The server's alert keys aren't set (add the VAPID secrets and deploy send-push)", "Couldn't check the server — send-push may not be deployed") +
+      row(h.internal, "Automatic alerts: the server's secret is set", "Automatic alerts: PUSH_INTERNAL_SECRET isn't set on the server", "Couldn't check the server's secret") +
+      row(h.linked, "Automatic alerts: the database is connected", "Automatic alerts: the database isn't connected yet (run the last step in supabase-auto-push.sql)", "Couldn't check the database connection (run supabase-auto-push.sql)") +
+      `<div class="status-row"><span class="status-mark">\u2022</span><span>${h.devices === null ? "Couldn\u2019t count phones" : `${h.devices} phone${h.devices === 1 ? "" : "s"} ${h.devices === 1 ? "has" : "have"} alerts switched on`}</span></div>`;
+  }
+
+  wrap.querySelector("#push-test").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const out = wrap.querySelector("#push-test-status");
+    btn.disabled = true;
+    out.textContent = "Sending\u2026";
+    const r = await sendTestPush();
+    btn.disabled = false;
+    if (!r.ok) out.textContent = r.message;
+    else if (r.sent > 0) out.textContent = "Sent \u2014 it should arrive on this phone in a few seconds.";
+    else out.textContent = "This phone isn\u2019t signed up for alerts yet. Open Profile \u2192 Settings, switch on Push notifications, then try again.";
+  });
+
+  load();
+  return wrap;
+}
+
 function renderPrayerInboxSection() {
   const wrap = document.createElement("div");
   wrap.className = "card";
@@ -1142,6 +1188,7 @@ export async function renderAdmin() {
 
   // Both roles can send notifications.
   contentMount.appendChild(renderSendNotificationSection());
+  contentMount.appendChild(renderPushStatusSection());
 
   if (isPastor) {
     contentMount.appendChild(renderPrayerInboxSection());
