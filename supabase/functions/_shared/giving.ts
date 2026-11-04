@@ -11,7 +11,7 @@ type Db = any;
 
 export const MAX_AMOUNT = 20_000_000;
 export const DEFAULT_MIN = 500;
-const FALLBACK_FUNDS = ["Tithe", "Offering", "Building Fund", "Missions"];
+const FALLBACK_FUNDS = ["Tithe", "Offering", "Limitless Transformation", "Missions"];
 const EXPIRE_AFTER_MS = 48 * 3600 * 1000;
 
 export type Mode = "live" | "demo" | "off";

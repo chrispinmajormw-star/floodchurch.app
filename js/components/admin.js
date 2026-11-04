@@ -164,7 +164,7 @@ const SECTIONS = [
     orderBy: "sort_order",
     autoOrder: true,
     fields: [
-      { key: "name", label: "Fund name (e.g. Building Fund)", type: "text" },
+      { key: "name", label: "Fund name (e.g. Youth Camp)", type: "text" },
       { key: "description", label: "Short description (optional)", type: "text", optional: true },
     ],
     listLabel: (row) => `${row.name}${row.description ? " — " + row.description : ""}`,
