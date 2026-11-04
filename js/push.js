@@ -103,15 +103,17 @@ async function serverMessage(error, fallback) {
 
 /**
  * Asks the server to send a test alert to THIS member's own phones.
- * → { ok: true, sent: n }  or  { ok: false, message }
+ * → { ok: true, sent: n }  or  { ok: false, message, detail }
+ * `message` is plain English for anyone; `detail` is the server's own words (e.g. "Vapid subject is not
+ * an url or mailto url"), shown in small print so whoever set things up can see what to fix.
  */
 export async function sendTestPush() {
   const { data, error } = await supabase.functions.invoke("send-push", { body: { mode: "test" } });
   if (error || !data) {
     const raw = await serverMessage(error, "");
     // The server's technical notes mean "not set up yet" — don't show members jargon.
-    const message = /configured|VAPID|secret/i.test(raw) ? "Phone alerts aren\u2019t switched on at the church\u2019s server yet." : "Couldn\u2019t send the test. Check your internet connection and try again.";
-    return { ok: false, message };
+    const message = /configured|VAPID|secret|subject|key/i.test(raw) ? "Phone alerts aren\u2019t switched on at the church\u2019s server yet." : "Couldn\u2019t send the test. Check your internet connection and try again.";
+    return { ok: false, message, detail: raw ? String(raw).slice(0, 200) : "" };
   }
   return { ok: true, sent: data.sent ?? 0 };
 }

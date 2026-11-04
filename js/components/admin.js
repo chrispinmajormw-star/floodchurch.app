@@ -1003,7 +1003,7 @@ function renderPushStatusSection() {
     out.textContent = "Sending\u2026";
     const r = await sendTestPush();
     btn.disabled = false;
-    if (!r.ok) out.textContent = r.message;
+    if (!r.ok) out.textContent = r.detail ? `${r.message} Server says: ${r.detail}` : r.message;
     else if (r.sent > 0) out.textContent = "Sent \u2014 it should arrive on this phone in a few seconds.";
     else out.textContent = "This phone isn\u2019t signed up for alerts yet. Open Profile \u2192 Settings, switch on Push notifications, then try again.";
   });

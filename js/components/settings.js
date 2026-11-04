@@ -112,7 +112,7 @@ function wireTestRow() {
     sub.textContent = "Sending\u2026";
     const result = await sendTestPush();
     btn.disabled = false;
-    if (!result.ok) sub.textContent = result.message;
+    if (!result.ok) sub.textContent = result.detail ? `${result.message} (Server says: ${result.detail})` : result.message;
     else if (result.sent > 0) sub.textContent = "Sent! It should arrive in a few seconds. If nothing appears, check this phone\u2019s notification settings.";
     else sub.textContent = "Nothing reached this phone. Switch Push notifications off and on again, then try once more.";
   });
