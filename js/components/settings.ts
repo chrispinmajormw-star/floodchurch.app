@@ -1,3 +1,4 @@
+import "../globals.module.css";
 // components/settings.js — renders the Settings page from data/settings.json,
 // with notification/media toggles backed by Supabase's user_settings table,
 // a push-notification switch for this device, and a live Dark/Light theme +
@@ -11,6 +12,7 @@ import { getPushStatus, enablePush, disablePush, sendTestPush } from "../push.js
 import { getSiteSettings } from "../site-settings.js";
 import { BIBLE_BOOKS } from "../bible-books.js";
 import { savedBookCount, saveWholeBible, removeSavedBible } from "../bible-text.js";
+import { applyPageClass, applySavedTheme } from "../util.js";
 
 const DEFAULT_SETTINGS = {
   live_alerts: true,
@@ -275,6 +277,8 @@ export async function renderSettings(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "profile.html", rightIcon: null, title: "Settings" });
+  applyPageClass("settings-page");
+  applySavedTheme();
 
   accountUserId = authUser.id;
 

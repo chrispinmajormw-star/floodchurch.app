@@ -10,10 +10,11 @@
 //   • Reading Plans come from the reading_plans table; progress is real
 //     (days completed, one tap per day) and saved per member.
 import "./bible.module.css";
+import "../globals.module.css";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { BIBLE_BOOKS } from "../bible-books.js";
-import { escapeHtml } from "../util.js";
+import { escapeHtml, applyPageClass, applySavedTheme } from "../util.js";
 import { getChapter, getVerses, parseReference, searchText, splitForHighlight } from "../bible-text.js";
 
 const LAST_READ_KEY = "flood-bible-last";
@@ -254,7 +255,9 @@ export async function renderBible(): Promise<void>() {
   const authUser = await requireAuth();
   if (!authUser) return;
 
-  bootApp({}); // no page topbar on this page, but still applies theme + bottom nav
+  bootApp({});
+  applyPageClass("bible-page");
+  applySavedTheme(); // no page topbar on this page, but still applies theme + bottom nav
 
   wireModals();
   const reader = initBibleReader();

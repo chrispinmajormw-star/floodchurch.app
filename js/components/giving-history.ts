@@ -1,8 +1,10 @@
+import "../globals.module.css";
 // components/giving-history.js — lists the signed-in user's recorded gifts.
 import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
+import { applyPageClass, applySavedTheme } from "../util.js";
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
@@ -13,6 +15,8 @@ export async function renderGivingHistory(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "profile.html", rightIcon: null, title: "Giving" });
+  applyPageClass("giving-history-page");
+  applySavedTheme();
 
   const listMount = document.getElementById("giving-list");
   const emptyMsg = document.getElementById("giving-empty");

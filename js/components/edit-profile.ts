@@ -1,14 +1,18 @@
+import "../globals.module.css";
 // components/edit-profile.js — lets the signed-in user update their profile
 // (name/group/team) and change their password.
 import { bootApp } from "../App.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
+import { applyPageClass, applySavedTheme } from "../util.js";
 
 export async function renderEditProfile(): Promise<void>() {
   const authUser = await requireAuth();
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "profile.html", rightIcon: null, title: "Edit Profile" });
+  applyPageClass("edit-profile-page");
+  applySavedTheme();
 
   const { data: profile } = await supabase
     .from("profiles")

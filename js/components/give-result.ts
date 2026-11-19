@@ -1,3 +1,4 @@
+import "../globals.module.css";
 // components/give-result.js — where you land after paying. It asks the server "did the money arrive?"
 // (the server checks with the gateway — this page never decides that itself) and tells you plainly.
 // Mobile-money approvals can take a few minutes, so while it's pending the page keeps checking.
@@ -5,7 +6,7 @@ import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
-import { escapeHtml } from "../util.js";
+import { escapeHtml, applyPageClass, applySavedTheme } from "../util.js";
 
 const RECHECK_MS = 4000;
 const MAX_AUTO_CHECKS = 8;
@@ -15,6 +16,8 @@ export async function renderGiveResult(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "give.html", rightIcon: null, title: "Your gift" });
+  applyPageClass("give-result-page");
+  applySavedTheme();
   const root = document.getElementById("give-result");
   const txRef = new URLSearchParams(location.search).get("tx_ref");
 

@@ -1,3 +1,4 @@
+import "../globals.module.css";
 // components/downloads.js — audio saved on THIS phone (so it plays with no internet), with sizes,
 // tap-to-play and remove. It works offline: the list lives on the phone, not on the server.
 // Older "saved for later" bookmarks from before real downloads existed are kept in a second list.
@@ -6,7 +7,7 @@ import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { savedList, verifyIndex, removeAudio, removeAllAudio, totalBytes, formatBytes } from "../offline-audio.js";
-import { escapeHtml } from "../util.js";
+import { escapeHtml, applyPageClass, applySavedTheme } from "../util.js";
 
 const KIND_LABEL = { sermon: "Sermon", podcast: "Podcast" };
 
@@ -26,6 +27,8 @@ export async function renderDownloads(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "profile.html", rightIcon: null, title: "Downloads" });
+  applyPageClass("downloads-page");
+  applySavedTheme();
 
   const listMount = document.getElementById("downloads-list");
   const emptyMsg = document.getElementById("downloads-empty");
@@ -47,7 +50,7 @@ export async function renderDownloads(): Promise<void>() {
     if (later.length) {
       parts.push(`<div class="settings-group"><p class="group-label">Saved for later</p>${later
         .map(
-          (r) => `<div class="list-row later-row" data-id="${escapeHtml(r.id)}">
+          (r) => `<div class="list-row later-row" data-id="${escapeHtml(r.id)}" role="button" tabindex="0">
             <div class="row-icon">${ICONS.bookmark}</div>
             <div class="row-body"><p class="row-title">${escapeHtml(r.title)}</p><p class="row-sub">${r.podcastId ? "Tap to open, then Download" : "Not on this phone yet"}</p></div>
             ${r.podcastId ? `<a class="icon-btn" href="watch.html?kind=podcast&id=${encodeURIComponent(r.podcastId)}" aria-label="Open" style="width:36px;height:36px;">${ICONS.chevron}</a>` : ""}

@@ -1,0 +1,19 @@
+/* notifications.module.css – scoped styles for notifications page */
+
+.notifications-page {
+  padding: var(--space-2, 1rem);
+}
+
+/* ── Accessibility & interactive feedback ─────────────────── */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--accent, var(--blue, #0066ff));
+  outline-offset: 2px;
+}
+
+[role="button"]:hover,
+.clickable:hover {
+  opacity: 0.9;
+  transition: opacity 150ms ease;
+}

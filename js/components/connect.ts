@@ -1,3 +1,4 @@
+import "../globals.module.css";
 // components/connect.js — "Connect with us": where to find the church, how to reach it, and its
 // social channels. Everything comes from Home & Contact Details in the dashboard, and only the
 // things that have been filled in are shown.
@@ -5,7 +6,7 @@ import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { getSiteSettings } from "../site-settings.js";
-import { escapeHtml, safeUrl } from "../util.js";
+import { escapeHtml, safeUrl, applyPageClass, applySavedTheme } from "../util.js";
 
 /** Keeps only real web links (https://…), so a mistyped or unsafe value can never become a button. */
 function webLink(value) {
@@ -69,6 +70,8 @@ export async function renderConnect(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "index.html", rightIcon: null, title: "Connect" });
+  applyPageClass("connect-page");
+  applySavedTheme();
 
   const site = await getSiteSettings();
   const groups = buildGroups(site);

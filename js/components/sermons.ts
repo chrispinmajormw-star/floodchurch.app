@@ -1,3 +1,4 @@
+import "../globals.module.css";
 // components/sermons.js — the Sermons library.
 //   • Search ............. by title, speaker or series
 //   • Video / Audio tabs . video = sermons posted as video; audio = podcasts and audio-only sermons
@@ -9,7 +10,7 @@ import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { parseMedia, youtubeThumbnail } from "../player.js";
-import { escapeHtml } from "../util.js";
+import { escapeHtml, applyPageClass, applySavedTheme } from "../util.js";
 
 const GRADIENTS = [
   "linear-gradient(160deg, #1fb6c9, #0a4a52)",
@@ -36,6 +37,8 @@ export async function renderSermons(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "media.html", rightIcon: null, title: "Sermons" });
+  applyPageClass("sermons-page");
+  applySavedTheme();
 
   const listMount = document.getElementById("sermon-list");
   const emptyMsg = document.getElementById("sermon-empty");

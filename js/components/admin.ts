@@ -7,10 +7,11 @@
 //           verse of the day.
 import "./admin.module.css";
 
+import "../globals.module.css";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { sendBroadcast, describePush } from "../notifications.js";
-import { escapeHtml, timeAgo } from "../util.js";
+import { escapeHtml, timeAgo, applyPageClass, applySavedTheme } from "../util.js";
 import { formatTime } from "../schedule.js";
 import { getPushHealth, sendTestPush } from "../push.js";
 
@@ -1169,6 +1170,8 @@ export async function renderAdmin(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "profile.html", rightIcon: null, title: "Admin" });
+  applyPageClass("admin-page");
+  applySavedTheme();
 
   const { data: profile } = await supabase
     .from("profiles")

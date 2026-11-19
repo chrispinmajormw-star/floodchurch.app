@@ -1,0 +1,148 @@
+/* globals.module.css — shared design tokens, utilities, and accessibility */
+
+/* ── Typography scale ─────────────────────────────────────── */
+:root {
+  --font-xs: 0.75rem;
+  --font-sm: 0.875rem;
+  --font-base: 1rem;
+  --font-lg: 1.25rem;
+  --font-xl: 1.5rem;
+  --font-2xl: 2rem;
+  --line-height: 1.5;
+  --line-height-tight: 1.25;
+
+  /* ── 8px spacing grid ───────────────────────────────────── */
+  --space-1: 0.5rem;   /* 8px */
+  --space-2: 1rem;     /* 16px */
+  --space-3: 1.5rem;   /* 24px */
+  --space-4: 2rem;     /* 32px */
+  --space-5: 2.5rem;   /* 40px */
+  --space-6: 3rem;     /* 48px */
+
+  /* ── Color contrast (WCAG AA) ───────────────────────────── */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --text-primary: #212121;
+  --text-secondary: #616161;
+  --accent: #0066ff;
+  --accent-hover: #0052cc;
+  --danger: #d32f2f;
+  --success: #2e7d32;
+
+  /* ── Dark mode overrides ────────────────────────────────── */
+  --bg-primary-dark: #121212;
+  --bg-secondary-dark: #1e1e1e;
+  --text-primary-dark: #e0e0e0;
+  --text-secondary-dark: #9e9e9e;
+  --accent-dark: #64b5f6;
+  --accent-hover-dark: #42a5f5;
+
+  /* ── Transitions ────────────────────────────────────────── */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
+/* ── Focus-visible outline (accessibility) ────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Hover states for interactive elements ────────────────── */
+button:hover,
+a:hover,
+[role="button"]:hover {
+  opacity: 0.9;
+  transition: opacity var(--transition-fast);
+}
+
+/* ── Dark mode ────────────────────────────────────────────── */
+body.theme-dark {
+  background-color: var(--bg-primary-dark);
+  color: var(--text-primary-dark);
+}
+
+body.theme-dark .page {
+  background-color: var(--bg-secondary-dark);
+}
+
+/* ── Responsive container ─────────────────────────────────── */
+.page {
+  max-width: 100%;
+  padding-left: var(--space-2);
+  padding-right: var(--space-2);
+}
+
+@media (min-width: 600px) {
+  .page { padding-left: var(--space-3); padding-right: var(--space-3); }
+}
+
+@media (min-width: 960px) {
+  .page { padding-left: var(--space-4); padding-right: var(--space-4); }
+}
+
+/* ── Loading spinner ──────────────────────────────────────── */
+.spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border, #e0e0e0);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-4) 0;
+}
+
+/* ── Empty state ──────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: var(--space-4) var(--space-2);
+  color: var(--text-secondary, var(--text-dim, #616161));
+}
+
+.empty-state svg {
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-2);
+  opacity: 0.4;
+}
+
+.empty-state h3 {
+  font-size: var(--font-lg);
+  margin: 0 0 var(--space-1);
+  color: var(--text-primary, var(--text, #212121));
+}
+
+.empty-state p {
+  font-size: var(--font-sm);
+  margin: 0;
+  line-height: var(--line-height);
+}
+
+/* ── Utility classes ──────────────────────────────────────── */
+.text-xs   { font-size: var(--font-xs); line-height: var(--line-height); }
+.text-sm   { font-size: var(--font-sm); line-height: var(--line-height); }
+.text-base { font-size: var(--font-base); line-height: var(--line-height); }
+.text-lg   { font-size: var(--font-lg); line-height: var(--line-height); }
+.text-xl   { font-size: var(--font-xl); line-height: var(--line-height-tight); }
+.text-2xl  { font-size: var(--font-2xl); line-height: var(--line-height-tight); }

@@ -1,14 +1,18 @@
+import "../globals.module.css";
 // components/saved-sermons.js — lists the signed-in user's saved sermons.
 import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
+import { applyPageClass, applySavedTheme } from "../util.js";
 
 export async function renderSavedSermons(): Promise<void>() {
   const authUser = await requireAuth();
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "profile.html", rightIcon: null, title: "Saved Sermons" });
+  applyPageClass("saved-sermons-page");
+  applySavedTheme();
 
   const listMount = document.getElementById("saved-list");
   const emptyMsg = document.getElementById("saved-empty");
@@ -32,7 +36,7 @@ export async function renderSavedSermons(): Promise<void>() {
   listMount.innerHTML = data
     .map(
       (s) => `
-    <div class="list-row" data-id="${s.id}">
+    <div class="list-row" data-id="${s.id}" role="button" tabindex="0">
       <div class="row-icon">${ICONS.bookmark}</div>
       <div class="row-body"><p class="row-title">${s.sermon_title}</p></div>
       <button class="icon-btn remove-btn" aria-label="Remove" style="width:32px;height:32px;">
