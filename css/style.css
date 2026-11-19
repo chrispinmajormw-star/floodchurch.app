@@ -336,6 +336,9 @@ h2.section-title {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center; /* the words sit in the middle of every button, also when it is full width */
+  text-align: center;
+  text-decoration: none;
   gap: 6px;
 }
 .btn-primary { background: var(--blue); color: #fff; }
@@ -681,6 +684,7 @@ h2.section-title {
   background: transparent;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   cursor: pointer;
 }
@@ -1926,6 +1930,8 @@ a.notif-row:hover { border-color: #3a3b42; }
 .topbar-signin {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   padding: 8px 16px;
   border-radius: 999px;
   background: var(--blue);
@@ -2005,3 +2011,21 @@ a.notif-row:hover { border-color: #3a3b42; }
 .gate-create { display: block; text-align: center; text-decoration: none; margin: 16px 0 10px; }
 .gate-or { font-size: 13px; color: var(--text-dim); margin: 0 0 4px; }
 .gate[hidden], #welcome-back[hidden], #new-here[hidden] { display: none; }
+
+/* A calm secondary button (outlined), and the "or" divider above it */
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--surface); }
+.btn-outline svg { width: 16px; height: 16px; flex-shrink: 0; }
+.auth-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.auth-or::before,
+.auth-or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
