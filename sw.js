@@ -13,7 +13,7 @@
 //     • Bible books (data/kjv, web, bbe, asv, ylt …) ... saved copy first (they never change)
 //     • Everything else (sign-in, uploads, YouTube, sending data) goes straight to the network.
 
-const SHELL_CACHE = "flood-shell-v3"; // pages, scripts, styles (versioned: replaced when this changes — BUMP THE NUMBER whenever app files change)
+const SHELL_CACHE = "flood-shell-v4"; // pages, scripts, styles (versioned: replaced when this changes — BUMP THE NUMBER whenever app files change)
 const DATA_CACHE = "flood-data"; // church content for the signed-in member (cleared on sign-out)
 const BIBLE_CACHE = "flood-bible"; // saved Bible books (kept across updates; js/bible-text.js uses this name)
 const AUDIO_CACHE = "flood-audio"; // podcasts/sermons saved on the phone (js/offline-audio.js uses this name)
@@ -56,7 +56,9 @@ self.addEventListener("install", (event) => {
           try {
             const key = pageKey(new URL(path, self.registration.scope));
             if (await cache.match(key)) return; // already saved — don't download it again
-            const res = await fetch(path);
+            // "reload" = straight from the server, never from the browser's own 10-minute memory: that memory can
+            // hold the OLD copy of a file for a while after an update, and saving it here would mix old and new.
+            const res = await fetch(path, { cache: "reload" });
             if (res && res.ok) await cache.put(key, res);
           } catch (e) {
             /* offline during install, or the file doesn't exist — skip it */
