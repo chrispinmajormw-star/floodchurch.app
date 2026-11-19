@@ -1,4 +1,3 @@
-import "../globals.module.css";
 // components/profile.js — renders the Profile page from the signed-in user's
 // Supabase profile + activity, plus the church's ministries table.
 import { bootApp } from "../App.js";
@@ -6,7 +5,6 @@ import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { ensureApplyModal, wireApplyRows } from "../simple-list.js";
-import { applyPageClass, applySavedTheme } from "../util.js";
 
 const LIST_ROWS = [
   { key: "giving", title: "Giving history", icon: "heart", href: "giving-history.html" },
@@ -27,8 +25,6 @@ export async function renderProfile(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ rightIcon: "gear", rightHref: "settings.html" });
-  applyPageClass("profile-page");
-  applySavedTheme();
 
   const [ministriesRes, profileRes, giftsRes, sermonsRes, plansRes] = await Promise.all([
     supabase.from("ministries").select("*").order("sort_order"),
@@ -81,7 +77,7 @@ export async function renderProfile(): Promise<void>() {
   ministryMount.innerHTML = ministries
     .map(
       (m) => `
-    <div class="list-row" style="cursor:pointer;" data-name="${m.name}" role="button" tabindex="0">
+    <div class="list-row" style="cursor:pointer;" data-name="${m.name}">
       <div class="row-body"><p class="row-title">${m.name}</p></div>
       <div class="chevron">${ICONS.chevron}</div>
     </div>`

@@ -1,11 +1,10 @@
-import "../globals.module.css";
 // components/notifications.js — the notification list behind the bell.
 import { bootApp } from "../App.js";
 import { requireAuth } from "../auth.js";
 import { ICONS } from "../icons.js";
 import { fetchNotifications, markAllRead } from "../notifications.js";
 import { getPushStatus, enablePush } from "../push.js";
-import { escapeHtml, timeAgo, safeUrl, applyPageClass, applySavedTheme } from "../util.js";
+import { escapeHtml, timeAgo, safeUrl } from "../util.js";
 
 const CATEGORY_ICON = {
   live: "tv",
@@ -38,8 +37,6 @@ export async function renderNotifications(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "index.html", rightIcon: null, title: "Notifications" });
-  applyPageClass("notifications-page");
-  applySavedTheme();
 
   const listMount = document.getElementById("notif-list");
   const emptyMsg = document.getElementById("notif-empty");

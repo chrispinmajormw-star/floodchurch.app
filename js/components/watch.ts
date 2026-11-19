@@ -1,4 +1,3 @@
-import "../globals.module.css";
 // components/watch.js — the "Now playing" page. A sermon, podcast or the live stream plays
 // right here in the page (not in a pop-up). You see the picture and press Play; nothing starts
 // by itself. Below the player is an "Up next" list; tapping one switches to it.
@@ -8,7 +7,7 @@ import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { mountPlayer, parseMedia, youtubeThumbnail } from "../player.js";
-import { escapeHtml, safeUrl, applyPageClass, applySavedTheme } from "../util.js";
+import { escapeHtml, safeUrl } from "../util.js";
 import { audioSupported, mountDownloadChip, savedList } from "../offline-audio.js";
 
 const GRADIENTS = [
@@ -33,8 +32,6 @@ export async function renderWatch(): Promise<void>() {
   const cfg = KINDS[kind];
 
   bootApp({ back: true, backHref: cfg ? cfg.back : "media.html", rightIcon: null, title: cfg ? cfg.title : "Live" });
-  applyPageClass("watch-page");
-  applySavedTheme();
   const root = document.getElementById("watch-root");
 
   const settingsRes = await supabase.from("user_settings").select("autoplay_next, wifi_only_downloads").eq("user_id", authUser.id).maybeSingle();

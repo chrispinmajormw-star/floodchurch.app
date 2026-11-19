@@ -1,9 +1,7 @@
-import "../globals.module.css";
 // components/prayer.js — submit and list the signed-in user's prayer requests.
 import { bootApp } from "../App.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
-import { applyPageClass, applySavedTheme } from "../util.js";
 
 function timeAgo(iso) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -20,8 +18,6 @@ export async function renderPrayer(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "profile.html", rightIcon: null, title: "Prayer" });
-  applyPageClass("prayer-page");
-  applySavedTheme();
 
   const listMount = document.getElementById("prayer-list");
   const emptyMsg = document.getElementById("prayer-empty");

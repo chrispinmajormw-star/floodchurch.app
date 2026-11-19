@@ -1,4 +1,3 @@
-import "../globals.module.css";
 // components/help.js — expandable FAQ list (from the faqs table, falling back to
 // data/faq.json if the table isn't there yet) and contact buttons that use the
 // church office email/phone saved in the admin dashboard.
@@ -7,15 +6,13 @@ import { requireAuth } from "../auth.js";
 import { ICONS } from "../icons.js";
 import { supabase } from "../supabaseClient.js";
 import { getSiteSettings } from "../site-settings.js";
-import { escapeHtml, applyPageClass, applySavedTheme } from "../util.js";
+import { escapeHtml } from "../util.js";
 
 export async function renderHelp(): Promise<void>() {
   const authUser = await requireAuth();
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "settings.html", rightIcon: null, title: "Help" });
-  applyPageClass("help-page");
-  applySavedTheme();
 
   const [faqRes, site] = await Promise.all([
     supabase.from("faqs").select("*").order("sort_order"),

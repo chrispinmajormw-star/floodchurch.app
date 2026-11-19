@@ -1,4 +1,3 @@
-import "../globals.module.css";
 // components/live.js — the Live TV page.
 //   • Live now ........ the stream, with a Play button (nothing starts until you press it)
 //   • Not live ........ a countdown to the next service, and the weekly schedule
@@ -9,7 +8,7 @@ import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { mountPlayer } from "../player.js";
 import { DAY_NAMES, formatTime, nextOccurrence, describeOccurrence, countdownText, sortedWeek } from "../schedule.js";
-import { escapeHtml, safeUrl, applyPageClass, applySavedTheme } from "../util.js";
+import { escapeHtml, safeUrl } from "../util.js";
 
 const POLL_MS = 45000;
 
@@ -18,8 +17,6 @@ export async function renderLive(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "media.html", rightIcon: null, title: "Live TV" });
-  applyPageClass("live-page");
-  applySavedTheme();
   const root = document.getElementById("live-root");
 
   const [liveRes, scheduleRes] = await Promise.all([

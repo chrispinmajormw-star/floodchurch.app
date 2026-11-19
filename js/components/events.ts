@@ -1,11 +1,9 @@
-import "../globals.module.css";
 // components/events.js — lists all events (Upcoming / Past) and opens a
 // detail modal with the full description when one is tapped. Supports
 // deep-linking via ?id=<event-id> (used by Home's event rows).
 import { bootApp } from "../App.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
-import { applyPageClass } from "../util.ts";
 
 function formatWhen(iso) {
   return new Date(iso).toLocaleString(undefined, {
@@ -29,7 +27,7 @@ function openEventModal(event) {
 
 function eventRow(event) {
   return `
-    <div class="event-row" data-id="${event.id}" style="cursor:pointer;" role="button" tabindex="0">
+    <div class="event-row" data-id="${event.id}" style="cursor:pointer;">
       <div>
         <p class="e-title">${event.title}</p>
         <p class="e-sub">${formatWhen(event.event_date)}${event.location ? " · " + event.location : ""}</p>
@@ -45,8 +43,6 @@ export async function renderEvents(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "index.html", rightIcon: null, title: "Events" });
-  applyPageClass("events-page");
-  applySavedTheme();
 
   const { data, error } = await supabase.from("events").select("*").order("event_date");
 

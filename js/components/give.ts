@@ -1,4 +1,3 @@
-import "../globals.module.css";
 // components/give.js — the Give page. You pick a fund and an amount; pressing Give asks the server to
 // start a payment and sends you to the gateway's secure page, where you choose Airtel Money, TNM Mpamba,
 // card or bank. A gift is only recorded once the server has confirmed the money (see give-result.html) —
@@ -8,7 +7,7 @@ import { bootApp, loadData } from "../App.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { getSiteSettings } from "../site-settings.js";
-import { escapeHtml, applyPageClass, applySavedTheme } from "../util.js";
+import { escapeHtml } from "../util.js";
 
 /**
  * "2000, 5,000 ; 10000" → [2000, 5000, 10000]. Understands both "5000" and "5,000", ignores anything
@@ -44,8 +43,6 @@ export async function renderGive(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ rightIcon: "receipt", rightHref: "giving-history.html" });
-  applyPageClass("give-page");
-  applySavedTheme();
 
   const [data, site, fundsRes] = await Promise.all([
     loadData("data/give.json"),

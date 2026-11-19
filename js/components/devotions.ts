@@ -1,10 +1,9 @@
-import "../globals.module.css";
 // components/devotions.js — every devotion posted so far, newest first. Tap one to read it.
 import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
-import { escapeHtml, applyPageClass, applySavedTheme } from "../util.js";
+import { escapeHtml } from "../util.js";
 
 function prettyDate(isoDate) {
   const d = new Date(`${isoDate}T00:00:00`);
@@ -16,8 +15,6 @@ export async function renderDevotions(): Promise<void>() {
   if (!authUser) return;
 
   bootApp({ back: true, backHref: "media.html", rightIcon: null, title: "Devotions" });
-  applyPageClass("devotions-page");
-  applySavedTheme();
 
   const mount = document.getElementById("devotion-list");
   const emptyMsg = document.getElementById("devotion-empty");

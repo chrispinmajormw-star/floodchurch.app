@@ -6,9 +6,7 @@
 // Supabase signs the person in with a one-time "recovery" session when they open the emailed link, and
 // that session is what allows the password to be changed. The link works once and expires.
 import "./auth-recovery.module.css";
-import "../globals.module.css";
 import { supabase } from "../supabaseClient.js";
-import { applyPageClass, applySavedTheme } from "../util.js";
 
 const MIN_PASSWORD = 8;
 
@@ -30,8 +28,6 @@ const isRateLimit = (error) => Boolean(error) && (error.status === 429 || /rate 
 // ---------------------------------------------------------------------------------------------
 /** @param {{cooldownSeconds?: number}} [options]  how long "Send again" is switched off after sending (default 60) */
 export function renderForgotPassword({ cooldownSeconds = 60 } = {}) {
-  applyPageClass("auth-recovery-page");
-  applySavedTheme();
   const form = $("forgot-form");
   const input = $("email");
   const button = $("submit-btn");

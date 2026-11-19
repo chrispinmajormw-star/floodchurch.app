@@ -5,12 +5,11 @@
 // announcements, ministries, live status, verse of the day) is live Supabase data.
 import { bootApp, loadData } from "../App.js";
 import "./home.module.css";
-import "../globals.module.css";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { getSiteSettings } from "../site-settings.js";
-import { escapeHtml, safeUrl, applyPageClass, applySavedTheme } from "../util.js";
+import { escapeHtml, safeUrl } from "../util.js";
 import { youtubeThumbnail } from "../player.js";
 import { nextOccurrence, countdownText } from "../schedule.js";
 import { getPushStatus, enablePush } from "../push.js";
@@ -118,8 +117,6 @@ export async function renderHome(): Promise<void>() {
   if (!authUser) return; // requireAuth already redirected to login.html
 
   bootApp({ rightIcon: "bell" });
-  applyPageClass("home-page");
-  applySavedTheme();
 
   const [
     home,
