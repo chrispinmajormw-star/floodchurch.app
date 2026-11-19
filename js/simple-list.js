@@ -117,7 +117,7 @@ export function wireApplyRows(container, { authUser, profileName, category, requ
 
     successBox.textContent = "Application submitted! Someone from the church will be in touch.";
     successBox.classList.add("show");
-    submitBtn.textContent = "Submitted ✓";
+    submitBtn.innerHTML = `<span class="ic-inline">${ICONS.check}</span> Submitted`;
     setTimeout(() => modal.classList.remove("open"), 1400);
   };
 }

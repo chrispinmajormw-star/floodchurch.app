@@ -10,6 +10,7 @@
 //   • Reading Plans come from the reading_plans table; progress is real
 //     (days completed, one tap per day) and saved per member.
 import { bootApp, loadData } from "../App.js";
+import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { BIBLE_BOOKS } from "../bible-books.js";
@@ -113,7 +114,7 @@ function initBibleReader() {
       const onPhone = saved && saved[i] >= BIBLE_BOOKS.length;
       return `<button class="version-item${v.id === version ? " active" : ""}" data-version="${v.id}" aria-pressed="${v.id === version}">
         <span class="v-name"><b>${escapeHtml(v.abbr)}</b>${escapeHtml(v.name)}</span>
-        <span class="v-side">${v.id === version ? '<span class="v-check">\u2713</span>' : onPhone ? '<span class="v-badge">Saved offline</span>' : ""}</span>
+        <span class="v-side">${v.id === version ? `<span class="v-check">${ICONS.check}</span>` : onPhone ? '<span class="v-badge">Saved offline</span>' : ""}</span>
         <span class="v-about">${escapeHtml(v.about)}</span>
       </button>`;
     }).join("");
@@ -388,7 +389,8 @@ export async function renderBible() {
         const percent = Math.min(100, Math.round((days / total) * 100));
         const complete = days >= total;
         const doneToday = p.last === today;
-        const label = complete ? "Completed ✓" : doneToday ? "Done for today ✓" : "Mark today's reading";
+        const tick = `<span class="ic-inline">${ICONS.check}</span> `;
+        const label = complete ? `${tick}Completed` : doneToday ? `${tick}Done for today` : "Mark today's reading";
         return `
       <div class="plan-card">
         <div class="plan-top">

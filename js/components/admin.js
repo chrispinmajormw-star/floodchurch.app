@@ -12,6 +12,7 @@ import { sendBroadcast, describePush } from "../notifications.js";
 import { escapeHtml, timeAgo } from "../util.js";
 import { formatTime } from "../schedule.js";
 import { getPushHealth, sendTestPush } from "../push.js";
+import { ICONS } from "../icons.js";
 
 function clip(text, n = 140) {
   const t = String(text ?? "").trim();
@@ -983,7 +984,7 @@ function renderPushStatusSection() {
 
   const row = (ok, good, bad, unknown) => {
     const cls = ok === true ? "status-ok" : ok === false ? "status-bad" : "status-unknown";
-    const mark = ok === true ? "\u2713" : ok === false ? "\u2717" : "?";
+    const mark = ok === true ? ICONS.check : ok === false ? ICONS.x : "?";
     return `<div class="status-row ${cls}"><span class="status-mark">${mark}</span><span>${escapeHtml(ok === true ? good : ok === false ? bad : unknown)}</span></div>`;
   };
 
@@ -1050,7 +1051,7 @@ function renderPrayerInboxSection() {
       <div class="list-row" style="cursor:default;align-items:flex-start;">
         <div class="row-body">
           <p class="row-title" style="font-weight:500;line-height:1.4;">${escapeHtml(row.content)}</p>
-          <p class="row-sub">${escapeHtml(nameById[row.user_id] || "Someone")} · ${timeAgo(row.created_at)}${row.prayed ? " · Prayed ✓" : ""}</p>
+          <p class="row-sub">${escapeHtml(nameById[row.user_id] || "Someone")} · ${timeAgo(row.created_at)}${row.prayed ? ` · <span class="ic-inline">${ICONS.check}</span> Prayed` : ""}</p>
         </div>
         <button class="chip" data-prayed="${row.id}" data-current="${row.prayed}" style="padding:6px 12px;flex-shrink:0;">
           ${row.prayed ? "Undo" : "Mark prayed"}
@@ -1115,7 +1116,7 @@ function renderApplicationsSection() {
           <p class="row-title" style="font-weight:700;">${escapeHtml(row.item_name)} <span style="font-weight:500;color:var(--text-dim);">(${escapeHtml(row.category)})</span></p>
           <p class="row-sub" style="margin-bottom:4px;">${escapeHtml(row.name)} · ${escapeHtml(row.email)}${row.phone ? " · " + escapeHtml(row.phone) : ""}${row.location ? " · " + escapeHtml(row.location) : ""}</p>
           <p class="row-sub" style="font-style:italic;">"${escapeHtml(row.reason)}"</p>
-          <p class="row-sub" style="margin-top:4px;">${timeAgo(row.created_at)}${row.status === "reviewed" ? " · Reviewed ✓" : ""}</p>
+          <p class="row-sub" style="margin-top:4px;">${timeAgo(row.created_at)}${row.status === "reviewed" ? ` · <span class="ic-inline">${ICONS.check}</span> Reviewed` : ""}</p>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
           <button class="chip" data-review="${row.id}" data-current="${row.status}" style="padding:6px 12px;">

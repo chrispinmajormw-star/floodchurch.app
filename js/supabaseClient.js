@@ -1,5 +1,6 @@
 // supabaseClient.js — one shared Supabase client, imported by any page that needs it.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// The library is kept inside the app (js/vendor/supabase.js), so every page starts without waiting on another website.
+import { createClient } from "./vendor/supabase.js";
 
 // Replace these with your project's own values (Settings → API in Supabase).
 const SUPABASE_URL = "https://dfqqubmilzwlkzpqnvvs.supabase.co";
