@@ -280,19 +280,41 @@ export async function renderHome() {
 
   // Upcoming events
   const events = eventsRes.data || [];
-  document.getElementById("event-list").innerHTML =
+  // Each row opens the event; an event with a poster also shows a small picture of it on the left, and tapping
+  // the picture opens the poster full screen instead.
+  const eventList = document.getElementById("event-list");
+  eventList.innerHTML =
     events
-      .map(
-        (e) => `
-      <a class="event-row" href="events.html?id=${escapeHtml(e.id)}" style="text-decoration:none;color:inherit;">
-        <div>
-          <p class="e-title">${escapeHtml(e.title)}</p>
-          <p class="e-sub">${escapeHtml(new Date(e.event_date).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }))}${e.location ? " · " + escapeHtml(e.location) : ""}</p>
-        </div>
-        <div class="chevron">${ICONS.chevron}</div>
-      </a>`
-      )
+      .map((e, i) => {
+        const poster = posterUrl(e.poster_url);
+        return `
+      <div class="event-row${poster ? " has-thumb" : ""}">
+        ${
+          poster
+            ? `<button type="button" class="event-thumb" data-event="${i}" aria-label="View the poster for ${escapeHtml(e.title)}">
+                 <img src="${escapeHtml(poster)}" alt="" loading="lazy" decoding="async">
+               </button>`
+            : ""
+        }
+        <a class="event-main" href="events.html?id=${escapeHtml(e.id)}">
+          <div class="event-text">
+            <p class="e-title">${escapeHtml(e.title)}</p>
+            <p class="e-sub">${escapeHtml(new Date(e.event_date).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }))}${e.location ? " · " + escapeHtml(e.location) : ""}</p>
+          </div>
+          <div class="chevron">${ICONS.chevron}</div>
+        </a>
+      </div>`;
+      })
       .join("") || `<p style="color:var(--text-dim);font-size:14px;">No upcoming events.</p>`;
+  eventList.querySelectorAll(".event-thumb").forEach((btn) => {
+    const e = events[Number(btn.dataset.event)];
+    btn.addEventListener("click", () => openPoster({ url: posterUrl(e.poster_url), title: e.title }));
+    // No signal and the picture isn't saved on the phone: the row simply goes back to the plain version.
+    btn.querySelector("img").addEventListener("error", () => {
+      btn.closest(".event-row").classList.remove("has-thumb");
+      btn.remove();
+    });
+  });
 
   // Conference banner
   const c = conferenceRes.data;
