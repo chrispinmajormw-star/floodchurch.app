@@ -11,7 +11,7 @@
 //     (days completed, one tap per day) and saved per member.
 import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
-import { requireAuth } from "../auth.js";
+import { getViewer, loginUrl } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { BIBLE_BOOKS } from "../bible-books.js";
 import { escapeHtml } from "../util.js";
@@ -316,8 +316,7 @@ function todayISO() {
 }
 
 export async function renderBible() {
-  const authUser = await requireAuth();
-  if (!authUser) return;
+  const authUser = await getViewer(); // null = a visitor: they can read everything, just not track plan progress
 
   bootApp({}); // no page topbar on this page, but still applies theme + bottom nav
 
@@ -329,7 +328,7 @@ export async function renderBible() {
     supabase.from("verse_of_day").select("*").order("verse_date", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("devotions").select("*").order("devotion_date", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("reading_plans").select("*").order("sort_order"),
-    supabase.from("reading_plan_progress").select("*").eq("user_id", authUser.id),
+    authUser ? supabase.from("reading_plan_progress").select("*").eq("user_id", authUser.id) : Promise.resolve({ data: [] }),
   ]);
 
   // ---- Daily Reading: latest verse + latest devotion -------------------------
@@ -390,7 +389,7 @@ export async function renderBible() {
         const complete = days >= total;
         const doneToday = p.last === today;
         const tick = `<span class="ic-inline">${ICONS.check}</span> `;
-        const label = complete ? `${tick}Completed` : doneToday ? `${tick}Done for today` : "Mark today's reading";
+        const label = !authUser ? "Sign in to track" : complete ? `${tick}Completed` : doneToday ? `${tick}Done for today` : "Mark today's reading";
         return `
       <div class="plan-card">
         <div class="plan-top">
@@ -401,7 +400,7 @@ export async function renderBible() {
         <div class="progress-track"><div class="progress-fill" style="width:${percent}%"></div></div>
         <div class="plan-top" style="margin-top:8px; margin-bottom:0;">
           <span class="plan-percent">Day ${days} of ${total} · ${percent}%</span>
-          <button class="chip" data-plan="${escapeHtml(plan.title)}" ${complete || doneToday ? "disabled" : ""} style="padding:6px 12px;">${label}</button>
+          <button class="chip" data-plan="${escapeHtml(plan.title)}" ${authUser && (complete || doneToday) ? "disabled" : ""} style="padding:6px 12px;">${label}</button>
         </div>
       </div>`;
       })
@@ -411,6 +410,10 @@ export async function renderBible() {
   function wireButtons() {
     plansMount.querySelectorAll("[data-plan]").forEach((btn) => {
       btn.addEventListener("click", async () => {
+        if (!authUser) {
+          location.href = loginUrl({ why: "reading-plan" }); // tracking needs an account; they come straight back here
+          return;
+        }
         const title = btn.dataset.plan;
         const plan = plans.find((p) => p.title === title);
         if (!plan) return;

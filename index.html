@@ -24,15 +24,6 @@
   // Apply saved theme/accent immediately, before first paint, to avoid a flash of the default theme.
   (function () {
     try {
-      var hasSession = Object.keys(localStorage).some(function (k) {
-        return k.indexOf("-auth-token") !== -1 && localStorage.getItem(k);
-      });
-      if (!hasSession) {
-        location.replace("login.html");
-        return;
-      }
-    } catch (e) {}
-    try {
       var t = localStorage.getItem("flood-theme") || "dark";
       var a = localStorage.getItem("flood-accent") || "#3b82f6";
       var bg = t === "light" ? "#f5f6f8" : "#0a0a0c";

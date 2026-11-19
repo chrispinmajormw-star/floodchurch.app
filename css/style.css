@@ -1920,3 +1920,88 @@ a.notif-row:hover { border-color: #3a3b42; }
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
 }
+
+/* ===== Open to everyone: visitors and the sign-in screen ===== */
+/* "Sign in" in the top bar, for someone without an account (where the notifications bell would be) */
+.topbar-signin {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* The invitation on Home */
+.guest-card {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 44px 16px 16px;
+  margin: 0 0 16px;
+}
+.guest-card-text b { display: block; font-size: 15px; margin-bottom: 4px; }
+.guest-card-text > span { display: block; font-size: 13px; line-height: 1.5; color: var(--text-dim); }
+.guest-card-actions { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+.guest-card-actions .btn { padding: 9px 16px; font-size: 14px; text-decoration: none; }
+.guest-link { color: var(--blue); font-weight: 700; font-size: 14px; text-decoration: none; }
+.guest-card-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-radius: 50%;
+}
+.guest-card-close svg { width: 16px; height: 16px; }
+
+/* The same invitation at the top of the side menu, and the lock on account-only items */
+.drawer-guest {
+  margin: 12px 16px 6px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.drawer-guest b { display: block; font-size: 15px; margin-bottom: 4px; }
+.drawer-guest > span { display: block; font-size: 13px; line-height: 1.5; color: var(--text-dim); }
+.drawer-guest-actions { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+.drawer-guest-actions .btn { padding: 9px 16px; font-size: 14px; text-decoration: none; }
+.drawer-signin { color: var(--blue); font-weight: 700; font-size: 14px; text-decoration: none; }
+.drawer-lock { display: flex; color: var(--text-faint); }
+.drawer-lock svg { width: 15px; height: 15px; }
+.drawer-link.locked .drawer-label { color: var(--text-dim); }
+
+/* The friendly "Sign in or create an account to continue" screen */
+.gate { text-align: center; margin: 0 0 18px; }
+.gate-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--blue-dim);
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+.gate-icon svg { width: 30px; height: 30px; }
+.gate h1 { font-size: 24px; line-height: 1.25; margin: 0 0 8px; }
+.gate-create { display: block; text-align: center; text-decoration: none; margin: 16px 0 10px; }
+.gate-or { font-size: 13px; color: var(--text-dim); margin: 0 0 4px; }
+.gate[hidden], #welcome-back[hidden], #new-here[hidden] { display: none; }

@@ -13,7 +13,7 @@
 //     • Bible books (data/kjv, web, bbe, asv, ylt …) ... saved copy first (they never change)
 //     • Everything else (sign-in, uploads, YouTube, sending data) goes straight to the network.
 
-const SHELL_CACHE = "flood-shell-v4"; // pages, scripts, styles (versioned: replaced when this changes — BUMP THE NUMBER whenever app files change)
+const SHELL_CACHE = "flood-shell-v5"; // pages, scripts, styles (versioned: replaced when this changes — BUMP THE NUMBER whenever app files change)
 const DATA_CACHE = "flood-data"; // church content for the signed-in member (cleared on sign-out)
 const BIBLE_CACHE = "flood-bible"; // saved Bible books (kept across updates; js/bible-text.js uses this name)
 const AUDIO_CACHE = "flood-audio"; // podcasts/sermons saved on the phone (js/offline-audio.js uses this name)

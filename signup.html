@@ -47,7 +47,7 @@
     </div>
 
     <h1>Join Flood Church</h1>
-    <p class="auth-sub">Create an account to get started.</p>
+    <p class="auth-sub" id="signup-sub">Create an account to get started.</p>
 
     <div class="auth-error" id="auth-error"></div>
 
@@ -67,18 +67,26 @@
       <button class="btn btn-primary auth-submit" type="submit" id="submit-btn">Create account</button>
     </form>
 
-    <p class="auth-switch">Already have an account? <a href="login.html">Sign in</a></p>
+    <p class="auth-switch">Already have an account? <a href="login.html" id="login-link">Sign in</a></p>
+    <p class="auth-switch"><a href="index.html">Keep browsing without an account</a></p>
   </div>
 </div>
 
 <script type="module">
-  import { signUp } from "./js/auth.js";
+  import { signUp, afterSignInTarget, gateReason, loginUrl } from "./js/auth.js";
   import { supabase } from "./js/supabaseClient.js";
   import { applyTheme } from "./js/theme.js";
   applyTheme();
 
+  // Where to go once the account exists: the page they came from (signup.html?next=give.html), or Home.
+  const params = new URLSearchParams(location.search);
+  const target = afterSignInTarget();
+  const reason = gateReason(target, params.get("why"));
+  if (reason) document.getElementById("signup-sub").textContent = `Create a free account to ${reason}. It only takes a minute.`;
+  document.getElementById("login-link").href = loginUrl({ next: target, why: params.get("why") });
+
   supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) location.href = "index.html";
+    if (session) location.href = target;
   });
 
   const form = document.getElementById("signup-form");
@@ -100,8 +108,8 @@
         name: nameInput.value.trim(),
       });
       if (result.session) {
-        // Email confirmation is off — go straight in.
-        location.href = "index.html";
+        // Email confirmation is off — go straight in (back to where they were).
+        location.href = target;
       } else {
         // Email confirmation is required.
         errorBox.textContent = "Account created! Check your email to confirm, then sign in.";

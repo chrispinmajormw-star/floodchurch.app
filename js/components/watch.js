@@ -4,7 +4,7 @@
 //   watch.html?kind=sermon&id=…   watch.html?kind=podcast&id=…   watch.html?kind=live
 import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
-import { requireAuth } from "../auth.js";
+import { getViewer } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { mountPlayer, parseMedia, youtubeThumbnail } from "../player.js";
 import { escapeHtml, safeUrl } from "../util.js";
@@ -23,8 +23,7 @@ const KINDS = {
 };
 
 export async function renderWatch() {
-  const authUser = await requireAuth();
-  if (!authUser) return;
+  const authUser = await getViewer(); // null = a visitor with no account
 
   const params = new URLSearchParams(location.search);
   const kind = params.get("kind") === "podcast" ? "podcast" : params.get("kind") === "live" ? "live" : "sermon";
@@ -34,9 +33,11 @@ export async function renderWatch() {
   bootApp({ back: true, backHref: cfg ? cfg.back : "media.html", rightIcon: null, title: cfg ? cfg.title : "Live" });
   const root = document.getElementById("watch-root");
 
-  const settingsRes = await supabase.from("user_settings").select("autoplay_next, wifi_only_downloads").eq("user_id", authUser.id).maybeSingle();
+  const settingsRes = authUser
+    ? await supabase.from("user_settings").select("autoplay_next, wifi_only_downloads").eq("user_id", authUser.id).maybeSingle()
+    : { data: null };
   const autoplayNext = Boolean(settingsRes.data?.autoplay_next);
-  const wifiOnly = Boolean(settingsRes.data?.wifi_only_downloads);
+  const wifiOnly = authUser ? Boolean(settingsRes.data?.wifi_only_downloads) : true; // visitors are asked before using mobile data
 
   // ---- What are we playing? ---------------------------------------------------
   let items = [];

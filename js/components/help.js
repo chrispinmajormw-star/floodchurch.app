@@ -2,15 +2,14 @@
 // data/faq.json if the table isn't there yet) and contact buttons that use the
 // church office email/phone saved in the admin dashboard.
 import { bootApp, loadData } from "../App.js";
-import { requireAuth } from "../auth.js";
+import { getViewer } from "../auth.js";
 import { ICONS } from "../icons.js";
 import { supabase } from "../supabaseClient.js";
 import { getSiteSettings } from "../site-settings.js";
 import { escapeHtml } from "../util.js";
 
 export async function renderHelp() {
-  const authUser = await requireAuth();
-  if (!authUser) return;
+  await getViewer(); // open to everyone: no account needed (null = a visitor)
 
   bootApp({ back: true, backHref: "settings.html", rightIcon: null, title: "Help" });
 

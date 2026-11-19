@@ -3,7 +3,7 @@
 // Older "saved for later" bookmarks from before real downloads existed are kept in a second list.
 import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
-import { requireAuth } from "../auth.js";
+import { getViewer } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { savedList, verifyIndex, removeAudio, removeAllAudio, totalBytes, formatBytes } from "../offline-audio.js";
 import { escapeHtml } from "../util.js";
@@ -22,10 +22,9 @@ function deviceRowHTML(d) {
 }
 
 export async function renderDownloads() {
-  const authUser = await requireAuth();
-  if (!authUser) return;
+  const authUser = await getViewer(); // null = a visitor: audio saved on the phone works without an account
 
-  bootApp({ back: true, backHref: "profile.html", rightIcon: null, title: "Downloads" });
+  bootApp({ back: true, backHref: authUser ? "profile.html" : "media.html", rightIcon: null, title: "Downloads" });
 
   const listMount = document.getElementById("downloads-list");
   const emptyMsg = document.getElementById("downloads-empty");
@@ -97,7 +96,8 @@ export async function renderDownloads() {
   await verifyIndex();
   render();
 
-  // 2) ...then add the older bookmarks if we can reach the server.
+  // 2) ...then add the older bookmarks if we can reach the server (only members have a list on the server).
+  if (!authUser) return;
   const { data, error } = await supabase.from("downloads").select("*").eq("user_id", authUser.id).order("created_at", { ascending: false });
   if (error || !data || !data.length) return;
   legacyRows = data.map((r) => ({ id: r.id, title: r.title, podcastId: null }));

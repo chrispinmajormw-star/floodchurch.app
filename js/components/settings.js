@@ -4,7 +4,7 @@
 // accent color picker (js/theme.js).
 import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
-import { requireAuth, signOut } from "../auth.js";
+import { getViewer, signOut, loginUrl, signupUrl } from "../auth.js";
 import { getTheme, getAccent, setTheme, setAccent, ACCENT_OPTIONS } from "../theme.js";
 import { supabase } from "../supabaseClient.js";
 import { getPushStatus, enablePush, disablePush, sendTestPush } from "../push.js";
@@ -212,8 +212,10 @@ function wireOfflineRow() {
       await refreshOfflineRow();
       return;
     }
+    // Members choose this in Settings; a visitor (no such switch on the page) is always asked first.
     const wifiOnly = document.querySelector('[data-field="wifi_only_downloads"]');
-    if (wifiOnly && wifiOnly.classList.contains("on") && onMobileData()) {
+    const askFirst = wifiOnly ? wifiOnly.classList.contains("on") : !accountUserId;
+    if (askFirst && onMobileData()) {
       const go = confirm(`You\u2019re on mobile data and \u201cDownload over Wi-Fi only\u201d is on. Save the ${abbr} (about 1.3 MB) anyway?`);
       if (!go) return;
     }
@@ -286,11 +288,51 @@ function wireAppearance(mount) {
   });
 }
 
-export async function renderSettings() {
-  const authUser = await requireAuth();
-  if (!authUser) return;
+/**
+ * Settings for someone without an account: the parts that don't need one (appearance, saving the Bible for
+ * offline reading, help and contact), with a "Sign in / Create an account" card where the account items are.
+ */
+async function renderGuestSettings() {
+  accountUserId = null; // nobody is signed in on this page
+  const [data, site, savedBooks] = await Promise.all([loadData("data/settings.json"), getSiteSettings(), savedBookCount()]);
 
-  bootApp({ back: true, backHref: "profile.html", rightIcon: null, title: "Settings" });
+  const contactHref = site.contact_email
+    ? `mailto:${site.contact_email}`
+    : site.contact_phone
+      ? `tel:${site.contact_phone.replace(/\s+/g, "")}`
+      : null;
+  const support = data.support.map((item) => (item.contact ? { ...item, href: contactHref } : item));
+
+  document.getElementById("account-group").innerHTML = [
+    { title: "Sign in", sub: "Already have an account?", icon: "user", href: loginUrl() },
+    { title: "Create an account", sub: "Free. Give, send prayer requests, save sermons", icon: "ministries", href: signupUrl() },
+  ]
+    .map(accountRow)
+    .join("");
+  // Notifications, account actions and Log out are for members only.
+  document.getElementById("notifications-group").closest(".settings-group").hidden = true;
+  document.getElementById("delete-account").closest(".settings-group").hidden = true;
+  document.getElementById("logout-btn").hidden = true;
+
+  document.getElementById("media-group").innerHTML = `<div id="offline-row">${offlineRowHTML(savedBooks)}</div>`;
+  document.getElementById("support-group").innerHTML = support.map(supportRow).join("");
+  document.getElementById("app-version").textContent = data.version;
+
+  const appearanceMount = document.getElementById("appearance-group");
+  appearanceMount.innerHTML = appearanceHTML();
+  wireAppearance(appearanceMount);
+  wireOfflineRow();
+}
+
+export async function renderSettings() {
+  const authUser = await getViewer(); // null = a visitor with no account
+
+  bootApp({ back: true, backHref: authUser ? "profile.html" : "index.html", rightIcon: null, title: "Settings" });
+
+  if (!authUser) {
+    await renderGuestSettings();
+    return;
+  }
 
   accountUserId = authUser.id;
 
@@ -371,7 +413,7 @@ export async function renderSettings() {
     // Stop sending this account's alerts to this phone once they sign out.
     await disablePush();
     await clearSavedContent();
-    await signOut(); // redirects to login.html
+    await signOut(); // goes back to Home, as a visitor
   });
 
   document.getElementById("delete-account").addEventListener("click", async () => {
@@ -396,6 +438,6 @@ export async function renderSettings() {
     await clearSavedContent();
     await supabase.auth.signOut({ scope: "local" });
     alert("Your account has been deleted.");
-    location.href = "login.html";
+    location.href = "index.html";
   });
 }

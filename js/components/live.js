@@ -4,7 +4,7 @@
 // While waiting it quietly checks every 45 seconds, so the page switches to the stream by itself
 // when the service begins.
 import { bootApp } from "../App.js";
-import { requireAuth } from "../auth.js";
+import { getViewer } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { mountPlayer } from "../player.js";
 import { DAY_NAMES, formatTime, nextOccurrence, describeOccurrence, countdownText, sortedWeek } from "../schedule.js";
@@ -13,8 +13,7 @@ import { escapeHtml, safeUrl } from "../util.js";
 const POLL_MS = 45000;
 
 export async function renderLive() {
-  const authUser = await requireAuth();
-  if (!authUser) return;
+  await getViewer(); // open to everyone: no account needed (null = a visitor)
 
   bootApp({ back: true, backHref: "media.html", rightIcon: null, title: "Live TV" });
   const root = document.getElementById("live-root");

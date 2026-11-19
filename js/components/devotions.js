@@ -1,7 +1,7 @@
 // components/devotions.js — every devotion posted so far, newest first. Tap one to read it.
 import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
-import { requireAuth } from "../auth.js";
+import { getViewer } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { escapeHtml } from "../util.js";
 
@@ -11,8 +11,7 @@ function prettyDate(isoDate) {
 }
 
 export async function renderDevotions() {
-  const authUser = await requireAuth();
-  if (!authUser) return;
+  await getViewer(); // open to everyone: no account needed (null = a visitor)
 
   bootApp({ back: true, backHref: "media.html", rightIcon: null, title: "Devotions" });
 

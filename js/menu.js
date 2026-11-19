@@ -4,15 +4,16 @@ import { ICONS } from "./icons.js";
 import { supabase } from "./supabaseClient.js";
 import { getUnreadCount } from "./notifications.js";
 import { escapeHtml } from "./util.js";
+import { hasStoredSession, loginUrl, signupUrl } from "./auth.js";
 
 const GROUPS = [
   {
     title: "Quick access",
     items: [
-      { label: "Profile", icon: "user", href: "profile.html" },
-      { label: "Giving", icon: "heart", href: "give.html" },
-      { label: "Updates", icon: "bell", href: "notifications.html", badge: true },
-      { label: "Prayer requests", icon: "pray", href: "prayer.html" },
+      { label: "Profile", icon: "user", href: "profile.html", members: true },
+      { label: "Giving", icon: "heart", href: "give.html", members: true },
+      { label: "Updates", icon: "bell", href: "notifications.html", badge: true, members: true },
+      { label: "Prayer requests", icon: "pray", href: "prayer.html", members: true },
     ],
   },
   {
@@ -22,7 +23,7 @@ const GROUPS = [
       { label: "Live TV", icon: "tv", href: "live.html" },
       { label: "Devotions", icon: "devotion", href: "devotions.html" },
       { label: "Podcasts", icon: "podcast", href: "media.html" },
-      { label: "Saved sermons", icon: "bookmark", href: "saved-sermons.html" },
+      { label: "Saved sermons", icon: "bookmark", href: "saved-sermons.html", members: true },
       { label: "Downloads", icon: "downloads", href: "downloads.html" },
     ],
   },
@@ -30,8 +31,8 @@ const GROUPS = [
     title: "Church",
     items: [
       { label: "Events", icon: "calendar", href: "events.html" },
-      { label: "Be Involved", icon: "ministries", href: "be-involved.html" },
-      { label: "Discipleship", icon: "book", href: "discipleship.html" },
+      { label: "Be Involved", icon: "ministries", href: "be-involved.html", members: true },
+      { label: "Discipleship", icon: "book", href: "discipleship.html", members: true },
     ],
   },
   {
@@ -48,17 +49,32 @@ const X_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 let els = null;
 let keyHandler = null;
 
-function linkHTML(item) {
+/** A visitor (no account) sees the account-only items marked with a lock; tapping one explains and brings them back. */
+function linkHTML(item, guest = false) {
   const here = (location.pathname.split("/").pop() || "index.html") === item.href;
-  return `<a class="drawer-link${here ? " current" : ""}" href="${item.href}"${here ? ' aria-current="page"' : ""}>
+  const locked = guest && item.members;
+  const href = locked ? loginUrl({ next: item.href }) : item.href;
+  return `<a class="drawer-link${here ? " current" : ""}${locked ? " locked" : ""}" href="${href}"${here ? ' aria-current="page"' : ""}${locked ? ' data-locked="true"' : ""}>
       <span class="drawer-icon">${ICONS[item.icon]}</span>
       <span class="drawer-label">${escapeHtml(item.label)}</span>
-      ${item.badge ? '<span class="menu-badge" hidden></span>' : ""}
-      <span class="drawer-chevron">${ICONS.chevron}</span>
+      ${item.badge && !locked ? '<span class="menu-badge" hidden></span>' : ""}
+      ${locked ? `<span class="drawer-lock" aria-label="Needs an account">${ICONS.lock}</span>` : `<span class="drawer-chevron">${ICONS.chevron}</span>`}
     </a>`;
 }
 
+function guestCardHTML() {
+  return `<div class="drawer-guest" id="drawer-guest">
+      <b>Join the Flood family</b>
+      <span>Create a free account to give, send prayer requests, save sermons and get alerts on your phone.</span>
+      <div class="drawer-guest-actions">
+        <a class="btn btn-primary" href="${signupUrl()}" id="drawer-signup">Create account</a>
+        <a class="drawer-signin" href="${loginUrl()}" id="drawer-signin">Sign in</a>
+      </div>
+    </div>`;
+}
+
 function build() {
+  const guest = !hasStoredSession();
   const overlay = document.createElement("div");
   overlay.className = "drawer-overlay";
   overlay.id = "drawer-overlay";
@@ -73,7 +89,8 @@ function build() {
         <button class="icon-btn" id="drawer-close" aria-label="Close menu">${X_ICON}</button>
       </div>
       <nav class="drawer-body">
-        ${GROUPS.map((g) => `<p class="drawer-group">${escapeHtml(g.title)}</p>${g.items.map(linkHTML).join("")}`).join("")}
+        ${guest ? guestCardHTML() : ""}
+        ${GROUPS.map((g) => `<p class="drawer-group">${escapeHtml(g.title)}</p>${g.items.map((i) => linkHTML(i, guest)).join("")}`).join("")}
         <div id="drawer-staff"></div>
       </nav>
     </aside>`;
@@ -87,6 +104,7 @@ function build() {
 
 /** The unread count and the dashboard link for staff — filled in after the menu is already showing. */
 async function fillDynamic() {
+  if (!hasStoredSession()) return; // a visitor has no unread count and no dashboard
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;

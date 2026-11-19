@@ -6,7 +6,7 @@
 // The bookmark saves a sermon (Profile → Saved sermons); the shortcuts jump to Saved and Downloads.
 import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
-import { requireAuth } from "../auth.js";
+import { getViewer, loginUrl } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { parseMedia, youtubeThumbnail } from "../player.js";
 import { escapeHtml } from "../util.js";
@@ -32,8 +32,7 @@ const sortKey = (item) => {
 };
 
 export async function renderSermons() {
-  const authUser = await requireAuth();
-  if (!authUser) return;
+  const authUser = await getViewer(); // null = a visitor with no account
 
   bootApp({ back: true, backHref: "media.html", rightIcon: null, title: "Sermons" });
 
@@ -50,7 +49,7 @@ export async function renderSermons() {
   const [sermonsRes, podcastsRes, savedRes] = await Promise.all([
     supabase.from("sermons").select("*").order("created_at", { ascending: false }).limit(200),
     supabase.from("podcasts").select("*").order("created_at", { ascending: false }).limit(200),
-    supabase.from("saved_sermons").select("sermon_title").eq("user_id", authUser.id),
+    authUser ? supabase.from("saved_sermons").select("sermon_title").eq("user_id", authUser.id) : Promise.resolve({ data: [] }),
   ]);
 
   if (sermonsRes.error) {
@@ -174,6 +173,10 @@ export async function renderSermons() {
     if (save) {
       e.stopPropagation();
       const title = save.dataset.title;
+      if (!authUser) {
+        location.href = loginUrl({ why: "save-sermon" }); // saving needs an account; they come straight back here
+        return;
+      }
       const isSaved = save.classList.contains("saved");
       save.disabled = true;
       const { error } = isSaved

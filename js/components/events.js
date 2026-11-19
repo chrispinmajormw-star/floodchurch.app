@@ -2,7 +2,7 @@
 // detail modal with the full description when one is tapped. Supports
 // deep-linking via ?id=<event-id> (used by Home's event rows).
 import { bootApp } from "../App.js";
-import { requireAuth } from "../auth.js";
+import { getViewer } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 
 function formatWhen(iso) {
@@ -39,8 +39,7 @@ function eventRow(event) {
 }
 
 export async function renderEvents() {
-  const authUser = await requireAuth();
-  if (!authUser) return;
+  await getViewer(); // open to everyone: no account needed (null = a visitor)
 
   bootApp({ back: true, backHref: "index.html", rightIcon: null, title: "Events" });
 

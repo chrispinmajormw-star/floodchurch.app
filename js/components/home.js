@@ -5,7 +5,7 @@
 // announcements, ministries, live status, verse of the day) is live Supabase data.
 import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
-import { requireAuth } from "../auth.js";
+import { getViewer, loginUrl, signupUrl } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { getSiteSettings } from "../site-settings.js";
 import { escapeHtml, safeUrl } from "../util.js";
@@ -48,6 +48,46 @@ const THUMB_GRADIENTS = [
   "linear-gradient(160deg, #6b4fd6, #1c1240)",
   "linear-gradient(160deg, #2f8bff, #0b1d3a)",
 ];
+
+const GUEST_CARD_KEY = "flood-guest-card";
+const GUEST_CARD_QUIET_DAYS = 7;
+
+/**
+ * A friendly invitation for someone without an account. The app is open to everyone; an account adds giving,
+ * prayer requests, saved sermons and alerts. "x" hides it for a week.
+ */
+function offerAccount() {
+  try {
+    const last = Number(localStorage.getItem(GUEST_CARD_KEY));
+    if (last && Date.now() - last < GUEST_CARD_QUIET_DAYS * 86400000) return;
+  } catch (e) {
+    /* show it */
+  }
+  const hero = document.querySelector(".hero");
+  if (!hero || document.getElementById("home-guest-card")) return;
+  const card = document.createElement("div");
+  card.className = "guest-card";
+  card.id = "home-guest-card";
+  card.innerHTML = `
+    <div class="guest-card-text">
+      <b>Join the Flood family</b>
+      <span>Create a free account to give, send prayer requests, save sermons and get alerts on your phone.</span>
+      <div class="guest-card-actions">
+        <a class="btn btn-primary" href="${signupUrl()}" id="guest-signup">Create account</a>
+        <a class="guest-link" href="${loginUrl()}" id="guest-signin">Sign in</a>
+      </div>
+    </div>
+    <button class="guest-card-close" id="guest-close" aria-label="Hide for now">${ICONS.x}</button>`;
+  hero.before(card);
+  document.getElementById("guest-close").addEventListener("click", () => {
+    try {
+      localStorage.setItem(GUEST_CARD_KEY, String(Date.now()));
+    } catch (e) {
+      /* it just comes back next time */
+    }
+    card.remove();
+  });
+}
 
 const PUSH_NUDGE_KEY = "flood-push-nudge";
 const PUSH_NUDGE_QUIET_DAYS = 14;
@@ -112,8 +152,7 @@ function thumbBackground(sermon, i) {
 }
 
 export async function renderHome() {
-  const authUser = await requireAuth();
-  if (!authUser) return; // requireAuth already redirected to login.html
+  const authUser = await getViewer(); // null = a visitor with no account (Home is open to everyone)
 
   bootApp({ rightIcon: "bell" });
 
@@ -134,7 +173,7 @@ export async function renderHome() {
   ] = await Promise.all([
     loadData("data/home.json"),
     getSiteSettings(),
-    supabase.from("profiles").select("name").eq("id", authUser.id).maybeSingle(),
+    authUser ? supabase.from("profiles").select("name").eq("id", authUser.id).maybeSingle() : Promise.resolve({ data: null }),
     supabase.from("devotions").select("*").order("devotion_date", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("sermons").select("*").order("created_at", { ascending: false }).limit(2),
     supabase.from("events").select("*").gte("event_date", new Date().toISOString()).order("event_date").limit(2),
@@ -147,9 +186,15 @@ export async function renderHome() {
     supabase.from("verse_of_day").select("*").order("verse_date", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
-  const displayName = profileRes.data?.name || authUser.email.split("@")[0];
-  document.getElementById("user-name").textContent = displayName;
-  document.getElementById("greeting-text").textContent = greetingForHour();
+  if (authUser) {
+    const displayName = profileRes.data?.name || authUser.email.split("@")[0];
+    document.getElementById("user-name").textContent = displayName;
+    document.getElementById("greeting-text").textContent = greetingForHour();
+  } else {
+    document.getElementById("greeting-text").textContent = "Welcome to";
+    document.getElementById("user-name").textContent = "Flood Church";
+    offerAccount();
+  }
 
   const quickGrid = document.getElementById("quick-grid");
   quickGrid.innerHTML = home.quickActions
@@ -215,6 +260,10 @@ export async function renderHome() {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
       const title = btn.dataset.title;
+      if (!authUser) {
+        location.href = loginUrl({ why: "save-sermon" }); // saving needs an account; they come straight back here
+        return;
+      }
       btn.disabled = true;
       const { error } = await supabase
         .from("saved_sermons")
@@ -307,5 +356,5 @@ export async function renderHome() {
   const schedule = scheduleRes.error ? [] : scheduleRes.data || [];
   startCountdown(() => (schedule.length ? nextOccurrence(schedule).date : nextServiceDate(site.service_day, site.service_hour)));
 
-  offerPush(authUser); // not awaited: it must never hold up the page
+  if (authUser) offerPush(authUser); // not awaited: it must never hold up the page
 }

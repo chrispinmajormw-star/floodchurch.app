@@ -3,7 +3,7 @@
 // things that have been filled in are shown.
 import { bootApp } from "../App.js";
 import { ICONS } from "../icons.js";
-import { requireAuth } from "../auth.js";
+import { getViewer } from "../auth.js";
 import { getSiteSettings } from "../site-settings.js";
 import { escapeHtml, safeUrl } from "../util.js";
 
@@ -65,8 +65,7 @@ export function buildGroups(site) {
 }
 
 export async function renderConnect() {
-  const authUser = await requireAuth();
-  if (!authUser) return;
+  await getViewer(); // open to everyone: no account needed (null = a visitor)
 
   bootApp({ back: true, backHref: "index.html", rightIcon: null, title: "Connect" });
 

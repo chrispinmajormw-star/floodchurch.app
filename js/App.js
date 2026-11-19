@@ -5,6 +5,7 @@ import { ICONS } from "./icons.js";
 import { applyTheme } from "./theme.js";
 import { supabase } from "./supabaseClient.js";
 import { getUnreadCount } from "./notifications.js";
+import { hasStoredSession, loginUrl } from "./auth.js";
 
 const NAV_ITEMS = [
   { href: "index.html", label: "Home", icon: "home" },
@@ -38,6 +39,7 @@ const BELL_DELAY_MS = 1000;
 
 /** Puts the unread count on the bell (a red number), or removes it when there are none. */
 async function refreshBellBadge() {
+  if (!hasStoredSession()) return; // a visitor has no notifications
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
@@ -85,7 +87,11 @@ export function renderTopbar({ rightIcon = "bell", rightHref = "#", back = false
     : "";
 
   const isBell = rightIcon === "bell";
-  const right = rightIcon
+  // Someone without an account gets a "Sign in" button where the notifications bell would be.
+  const visitor = isBell && !hasStoredSession();
+  const right = visitor
+    ? `<a class="topbar-signin" href="${loginUrl()}" id="topbar-signin">Sign in</a>`
+    : rightIcon
     ? `<a class="icon-btn" href="${isBell ? "notifications.html" : rightHref}" aria-label="${isBell ? "Notifications" : "Action"}"${isBell ? " data-bell" : ""}>${ICONS[rightIcon]}</a>`
     : `<span style="width:36px;"></span>`;
 

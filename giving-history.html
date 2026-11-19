@@ -28,7 +28,7 @@
         return k.indexOf("-auth-token") !== -1 && localStorage.getItem(k);
       });
       if (!hasSession) {
-        location.replace("login.html");
+        location.replace("login.html?next=" + encodeURIComponent(location.pathname.split("/").pop() + location.search));
         return;
       }
     } catch (e) {}

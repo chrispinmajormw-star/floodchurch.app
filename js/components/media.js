@@ -3,7 +3,7 @@
 // and the Devotions archive.
 import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
-import { requireAuth } from "../auth.js";
+import { getViewer } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { escapeHtml, safeUrl } from "../util.js";
 import { nextOccurrence, describeOccurrence } from "../schedule.js";
@@ -11,8 +11,7 @@ import { parseMedia } from "../player.js";
 import { audioSupported, bindDownloadButton } from "../offline-audio.js";
 
 export async function renderMedia() {
-  const authUser = await requireAuth();
-  if (!authUser) return;
+  const authUser = await getViewer(); // null = a visitor with no account
 
   bootApp({ rightIcon: "bell" });
 
@@ -21,7 +20,7 @@ export async function renderMedia() {
     supabase.from("podcasts").select("*").order("created_at", { ascending: false }),
     supabase.from("media_live").select("*").eq("id", 1).maybeSingle(),
     supabase.from("live_schedule").select("*"),
-    supabase.from("user_settings").select("wifi_only_downloads").eq("user_id", authUser.id).maybeSingle(),
+    authUser ? supabase.from("user_settings").select("wifi_only_downloads").eq("user_id", authUser.id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
 
   const live = liveRes.data;
@@ -93,7 +92,7 @@ export async function renderMedia() {
       .join("") || `<p style="color:var(--text-dim);font-size:14px;padding:12px 4px;">No podcasts posted yet.</p>`;
 
   // The round button on each podcast really downloads the audio to the phone (only for audio files that can be saved).
-  const wifiOnly = Boolean(settingsRes.data?.wifi_only_downloads);
+  const wifiOnly = authUser ? Boolean(settingsRes.data?.wifi_only_downloads) : true; // visitors are asked before using mobile data
   podcastsMount.querySelectorAll(".download-btn").forEach((btn) => {
     const p = podcasts[Number(btn.dataset.index)];
     if (!p || !audioSupported() || parseMedia(p.audio_url).kind !== "audio") {

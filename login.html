@@ -33,8 +33,18 @@
       <div class="word"><b>FLOOD</b><span>CHURCH</span></div>
     </div>
 
-    <h1>Welcome back</h1>
-    <p class="auth-sub">Sign in to give, save sermons, and track your reading plans.</p>
+    <!-- Shown when someone reaches something that needs an account (login.html?next=give.html) -->
+    <div class="gate" id="gate" hidden>
+      <div class="gate-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+      <h1>Sign in or create an account to continue</h1>
+      <p class="auth-sub" id="gate-reason"></p>
+      <a class="btn btn-primary auth-submit gate-create" id="gate-create" href="signup.html">Create an account</a>
+      <p class="gate-or">Already have an account? Sign in below.</p>
+    </div>
+    <div id="welcome-back">
+      <h1>Welcome back</h1>
+      <p class="auth-sub">Sign in to give, save sermons, and track your reading plans.</p>
+    </div>
 
     <div class="auth-error" id="auth-error"></div>
 
@@ -51,19 +61,36 @@
       <button class="btn btn-primary auth-submit" type="submit" id="submit-btn">Sign in</button>
     </form>
 
-    <p class="auth-switch">New here? <a href="signup.html">Create an account</a></p>
+    <p class="auth-switch" id="new-here">New here? <a href="signup.html" id="signup-link">Create an account</a></p>
+    <p class="auth-switch"><a href="index.html" id="keep-browsing">Keep browsing without an account</a></p>
   </div>
 </div>
 
 <script type="module">
-  import { signIn } from "./js/auth.js";
+  import { signIn, afterSignInTarget, gateReason, signupUrl } from "./js/auth.js";
   import { supabase } from "./js/supabaseClient.js";
   import { applyTheme } from "./js/theme.js";
   applyTheme();
 
-  // Already signed in? Skip straight to the app.
+  // Where to go after signing in: the page they came from (login.html?next=give.html), or Home.
+  const params = new URLSearchParams(location.search);
+  const target = afterSignInTarget();
+
+  // Someone who reached something that needs an account sees a friendly explanation and a way to create one.
+  const reason = gateReason(target, params.get("why"));
+  const createUrl = signupUrl({ next: target, why: params.get("why") });
+  document.getElementById("signup-link").href = createUrl;
+  if (reason) {
+    document.getElementById("gate").hidden = false;
+    document.getElementById("welcome-back").hidden = true;
+    document.getElementById("new-here").hidden = true;
+    document.getElementById("gate-reason").textContent = `You need a free account to ${reason}. It only takes a minute.`;
+    document.getElementById("gate-create").href = createUrl;
+  }
+
+  // Already signed in? Go straight where they were headed.
   supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) location.href = "index.html";
+    if (session) location.href = target;
   });
 
   const form = document.getElementById("login-form");
@@ -85,7 +112,7 @@
     submitBtn.textContent = "Signing in…";
     try {
       await signIn(emailInput.value.trim(), passwordInput.value);
-      location.href = "index.html";
+      location.href = target;
     } catch (err) {
       errorBox.textContent = err.message || "Couldn't sign in. Check your details and try again.";
       errorBox.classList.add("show");
