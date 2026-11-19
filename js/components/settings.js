@@ -10,7 +10,7 @@ import { supabase } from "../supabaseClient.js";
 import { getPushStatus, enablePush, disablePush, sendTestPush } from "../push.js";
 import { getSiteSettings } from "../site-settings.js";
 import { BIBLE_BOOKS } from "../bible-books.js";
-import { savedBookCount, saveWholeBible, removeSavedBible } from "../bible-text.js";
+import { savedBookCount, saveWholeBible, removeSavedBible, BIBLE_VERSIONS, getVersion, versionInfo } from "../bible-text.js";
 
 const DEFAULT_SETTINGS = {
   live_alerts: true,
@@ -156,19 +156,26 @@ function wirePushRow(authUser) {
 // --- Offline Bible ------------------------------------------------------------
 
 const TOTAL_BOOKS = BIBLE_BOOKS.length;
+let offlineVersion = null; // which version the row is about (starts as the one being read)
+const currentOfflineVersion = () => offlineVersion || getVersion();
 
 function offlineRowHTML(saved) {
+  const versionId = currentOfflineVersion();
+  const abbr = versionInfo(versionId).abbr;
   const all = saved >= TOTAL_BOOKS;
   const sub = all
-    ? "Saved on this phone — the whole Bible works with no signal"
+    ? `Saved on this phone — the whole ${abbr} works with no signal`
     : saved > 0
       ? `${saved} of ${TOTAL_BOOKS} books saved. Save the rest to read anywhere`
-      : "Save the whole Bible (about 1.3 MB) to read with no signal";
+      : `Save the whole ${abbr} (about 1.3 MB) to read with no signal`;
   return `
     <div class="toggle-row">
-      <div>
+      <div style="min-width:0;">
         <div class="t-title">Bible for offline reading</div>
         <div class="t-sub" id="offline-sub">${sub}</div>
+        <select class="auth-input" id="offline-version" aria-label="Bible version to save" style="margin-top:8px;padding:6px 10px;font-size:13px;width:auto;max-width:100%;">
+          ${BIBLE_VERSIONS.map((v) => `<option value="${v.id}"${v.id === versionId ? " selected" : ""}>${v.abbr} — ${v.name}</option>`).join("")}
+        </select>
       </div>
       <button class="chip" id="offline-btn" style="padding:8px 14px;flex-shrink:0;">${all ? "Remove" : "Save"}</button>
     </div>`;
@@ -176,7 +183,7 @@ function offlineRowHTML(saved) {
 
 async function refreshOfflineRow() {
   const holder = document.getElementById("offline-row");
-  if (holder) holder.innerHTML = offlineRowHTML(await savedBookCount());
+  if (holder) holder.innerHTML = offlineRowHTML(await savedBookCount(currentOfflineVersion()));
   wireOfflineRow();
 }
 
@@ -189,23 +196,32 @@ function onMobileData() {
 function wireOfflineRow() {
   const btn = document.getElementById("offline-btn");
   const sub = document.getElementById("offline-sub");
+  const picker = document.getElementById("offline-version");
   if (!btn) return;
+  if (picker) {
+    picker.addEventListener("change", async () => {
+      offlineVersion = picker.value; // only changes which version this row is about, not the one being read
+      await refreshOfflineRow();
+    });
+  }
   btn.addEventListener("click", async () => {
-    if ((await savedBookCount()) >= TOTAL_BOOKS) {
-      await removeSavedBible();
+    const versionId = currentOfflineVersion();
+    const abbr = versionInfo(versionId).abbr;
+    if ((await savedBookCount(versionId)) >= TOTAL_BOOKS) {
+      await removeSavedBible(versionId);
       await refreshOfflineRow();
       return;
     }
     const wifiOnly = document.querySelector('[data-field="wifi_only_downloads"]');
     if (wifiOnly && wifiOnly.classList.contains("on") && onMobileData()) {
-      const go = confirm("You\u2019re on mobile data and \u201cDownload over Wi-Fi only\u201d is on. Save the Bible (about 1.3 MB) anyway?");
+      const go = confirm(`You\u2019re on mobile data and \u201cDownload over Wi-Fi only\u201d is on. Save the ${abbr} (about 1.3 MB) anyway?`);
       if (!go) return;
     }
     btn.disabled = true;
     try {
       await saveWholeBible((done, total) => {
-        sub.textContent = `Saving\u2026 ${done} of ${total} books`;
-      });
+        sub.textContent = `Saving the ${abbr}\u2026 ${done} of ${total} books`;
+      }, versionId);
     } catch (err) {
       alert(err.message);
     }

@@ -1,5 +1,6 @@
-// bible-text.js — the King James Bible, hosted inside this app (data/kjv/<book>.json),
-// so reading and searching never depend on an outside service and can work offline.
+// bible-text.js — the Bible, hosted inside this app (data/<version>/<book>.json for the KJV, WEB, BBE,
+// ASV and YLT), so reading and searching never depend on an outside service and can work offline.
+//   • getVersion / setVersion ..... which version this phone reads (remembered on the phone)
 //   • getChapter / getVerses ...... read from one small file per book
 //   • parseReference .............. understands "John 3:16", "Rom 8:1-4", "1 cor 13", "Psalm 23"
 //   • searchText .................. finds words across the whole Bible
@@ -9,12 +10,49 @@ import { BIBLE_BOOKS } from "./bible-books.js";
 /** Name of the browser cache that holds saved Bible books (sw.js uses the same name). */
 export const BIBLE_CACHE = "flood-bible";
 
+/** The versions the app can read. Each lives in data/<id>/<book>.json (sw.js knows the same folders). */
+export const BIBLE_VERSIONS = [
+  { id: "kjv", abbr: "KJV", name: "King James Version", year: 1611, about: "The classic English Bible, the one this app has always used." },
+  { id: "web", abbr: "WEB", name: "World English Bible", year: 2000, about: "Modern, easy-to-read English. Uses \u201cYahweh\u201d for God\u2019s name." },
+  { id: "bbe", abbr: "BBE", name: "Bible in Basic English", year: 1949, about: "Written with only about 1,000 everyday words, so it is very easy to follow." },
+  { id: "asv", abbr: "ASV", name: "American Standard Version", year: 1901, about: "A careful word-for-word revision of the KJV. Uses \u201cJehovah\u201d for God\u2019s name." },
+  { id: "ylt", abbr: "YLT", name: "Young\u2019s Literal Translation", year: 1898, about: "Extremely literal: keeps the original word order and tenses. Good for study." },
+];
+export const DEFAULT_VERSION = "kjv";
+const VERSION_KEY = "flood-bible-version";
+
+/** The details of one version (the KJV if the id isn't one we know). */
+export function versionInfo(id) {
+  return BIBLE_VERSIONS.find((v) => v.id === id) || BIBLE_VERSIONS[0];
+}
+
+/** The version this phone reads: whatever was chosen last, or the KJV. */
+export function getVersion() {
+  try {
+    const id = globalThis.localStorage && globalThis.localStorage.getItem(VERSION_KEY);
+    return BIBLE_VERSIONS.some((v) => v.id === id) ? id : DEFAULT_VERSION;
+  } catch (e) {
+    return DEFAULT_VERSION;
+  }
+}
+
+/** Remembers the chosen version. An unknown id is ignored. Returns the version now in use. */
+export function setVersion(id) {
+  if (!BIBLE_VERSIONS.some((v) => v.id === id)) return getVersion();
+  try {
+    globalThis.localStorage.setItem(VERSION_KEY, id);
+  } catch (e) {
+    /* the choice just won't be remembered */
+  }
+  return id;
+}
+
 export function bookSlug(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function bookUrl(name) {
-  const rel = `data/kjv/${bookSlug(name)}.json`;
+function bookUrl(name, version = getVersion()) {
+  const rel = `data/${version}/${bookSlug(name)}.json`;
   try {
     return new URL(rel, globalThis.location ? globalThis.location.href : "http://localhost/").href;
   } catch (e) {
@@ -23,7 +61,7 @@ function bookUrl(name) {
 }
 
 const hasCaches = () => typeof caches !== "undefined" && caches && typeof caches.open === "function";
-const memory = new Map(); // book name → { name, chapters: [[verse, …], …] }
+const memory = new Map(); // "version/book name" → { name, chapters: [[verse, …], …] }
 
 async function fetchWithTimeout(url, ms = 15000) {
   const controller = new AbortController();
@@ -36,9 +74,10 @@ async function fetchWithTimeout(url, ms = 15000) {
 }
 
 /** Loads one whole book (from memory, then this device's saved copy, then the network). */
-export async function getBook(name) {
-  if (memory.has(name)) return memory.get(name);
-  const url = bookUrl(name);
+export async function getBook(name, version = getVersion()) {
+  const memoryKey = `${version}/${name}`;
+  if (memory.has(memoryKey)) return memory.get(memoryKey);
+  const url = bookUrl(name, version);
 
   let data = null;
   if (hasCaches()) {
@@ -70,23 +109,31 @@ export async function getBook(name) {
     data = await res.json();
   }
 
-  memory.set(name, data);
+  memory.set(memoryKey, data);
   return data;
 }
 
-/** Returns an array of verse objects [{ verse: 1, text: "…" }, …] for a whole chapter. */
-export async function getChapter(name, chapter) {
-  const book = await getBook(name);
+const hasText = (v) => typeof v.text === "string" && v.text.trim() !== "";
+
+/**
+ * Returns an array of verse objects [{ verse: 1, text: "…" }, …] for a whole chapter.
+ * A verse a translation leaves out (e.g. Acts 8:37 in the WEB) is skipped; the numbers of the others stay true.
+ */
+export async function getChapter(name, chapter, version = getVersion()) {
+  const book = await getBook(name, version);
   const verses = book.chapters[Number(chapter) - 1];
   if (!verses) throw new Error(`${name} doesn't have a chapter ${chapter}.`);
-  return verses.map((text, i) => ({ verse: i + 1, text }));
+  return verses.map((text, i) => ({ verse: i + 1, text })).filter(hasText);
 }
 
-/** Returns a range of verses from one chapter (to defaults to from). */
-export async function getVerses(name, chapter, from, to = from) {
-  const all = await getChapter(name, chapter);
-  if (from > all.length) throw new Error(`${name} ${chapter} only has ${all.length} verses.`);
-  return all.slice(from - 1, Math.min(to, all.length));
+/** Returns a range of verses from one chapter (to defaults to from). Empty if that translation leaves the verse out. */
+export async function getVerses(name, chapter, from, to = from, version = getVersion()) {
+  const book = await getBook(name, version);
+  const verses = book.chapters[Number(chapter) - 1];
+  if (!verses) throw new Error(`${name} doesn't have a chapter ${chapter}.`);
+  if (from > verses.length) throw new Error(`${name} ${chapter} only has ${verses.length} verses.`);
+  const last = Math.min(to, verses.length);
+  return verses.map((text, i) => ({ verse: i + 1, text })).filter((v) => v.verse >= from && v.verse <= last && hasText(v));
 }
 
 // ---------------------------------------------------------------------------
@@ -219,7 +266,7 @@ export function searchTerms(query) {
  * "love" also finds "loved" and "lovingkindness"). Results come back in Bible order.
  * onProgress(booksDone, totalBooks) lets the screen show how far along it is.
  */
-export async function searchText(query, { limit = 50, onProgress } = {}) {
+export async function searchText(query, { limit = 50, onProgress, version = getVersion() } = {}) {
   const terms = searchTerms(query);
   if (!terms.length) return { results: [], truncated: false, terms };
   const regexes = terms.map((t) => new RegExp("\\b" + termPattern(t), "i"));
@@ -228,7 +275,7 @@ export async function searchText(query, { limit = 50, onProgress } = {}) {
   const BATCH = 6;
   for (let i = 0; i < BIBLE_BOOKS.length; i += BATCH) {
     const group = BIBLE_BOOKS.slice(i, i + BATCH);
-    const books = await Promise.all(group.map((b) => getBook(b.name)));
+    const books = await Promise.all(group.map((b) => getBook(b.name, version)));
     for (let b = 0; b < books.length; b++) {
       books[b].chapters.forEach((verses, ci) => {
         verses.forEach((text, vi) => {
@@ -255,21 +302,21 @@ export function splitForHighlight(text, terms) {
 // ---------------------------------------------------------------------------
 // Keeping the Bible on this device
 // ---------------------------------------------------------------------------
-/** How many of the 66 books are saved on this device. */
-export async function savedBookCount() {
+/** How many of the 66 books of one version are saved on this device. */
+export async function savedBookCount(version = getVersion()) {
   if (!hasCaches()) return 0;
   try {
     const cache = await caches.open(BIBLE_CACHE);
     let n = 0;
-    for (const b of BIBLE_BOOKS) if (await cache.match(bookUrl(b.name))) n++;
+    for (const b of BIBLE_BOOKS) if (await cache.match(bookUrl(b.name, version))) n++;
     return n;
   } catch (e) {
     return 0;
   }
 }
 
-/** Downloads every book into this device's storage. onProgress(done, total). */
-export async function saveWholeBible(onProgress) {
+/** Downloads every book of one version into this device's storage. onProgress(done, total). */
+export async function saveWholeBible(onProgress, version = getVersion()) {
   if (!hasCaches()) throw new Error("This browser can't save files for offline use.");
   const cache = await caches.open(BIBLE_CACHE);
   const total = BIBLE_BOOKS.length;
@@ -278,7 +325,7 @@ export async function saveWholeBible(onProgress) {
   for (let i = 0; i < total; i += BATCH) {
     await Promise.all(
       BIBLE_BOOKS.slice(i, i + BATCH).map(async (b) => {
-        const url = bookUrl(b.name);
+        const url = bookUrl(b.name, version);
         if (!(await cache.match(url))) {
           const res = await fetchWithTimeout(url, 30000);
           if (!res.ok) throw new Error(`Couldn't download ${b.name} (error ${res.status}).`);
@@ -292,7 +339,21 @@ export async function saveWholeBible(onProgress) {
   return total;
 }
 
-export async function removeSavedBible() {
+/** Removes the saved copy of ONE version (the others stay saved). */
+export async function removeSavedBible(version = getVersion()) {
+  if (hasCaches()) {
+    try {
+      const cache = await caches.open(BIBLE_CACHE);
+      for (const b of BIBLE_BOOKS) await cache.delete(bookUrl(b.name, version));
+    } catch (e) {
+      /* nothing to remove */
+    }
+  }
+  for (const key of [...memory.keys()]) if (key.startsWith(`${version}/`)) memory.delete(key);
+}
+
+/** Removes every saved version. */
+export async function removeAllSavedBibles() {
   if (hasCaches()) await caches.delete(BIBLE_CACHE);
   memory.clear();
 }

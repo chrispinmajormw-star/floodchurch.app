@@ -7,7 +7,7 @@
 //                                          falling back to the last saved copy when offline
 //     • Your church content (Supabase) ... network first, saved separately for each signed-in
 //                                          person, and wiped when they sign out
-//     • Bible books (data/kjv/…) ......... saved copy first (they never change)
+//     • Bible books (data/kjv, web, bbe, asv, ylt …) ... saved copy first (they never change)
 //     • Everything else (sign-in, uploads, YouTube, sending data) goes straight to the network.
 
 const SHELL_CACHE = "flood-shell-v2"; // pages, scripts, styles (versioned: replaced when this changes)
@@ -161,8 +161,8 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return; // YouTube, pictures from other sites… → normal handling
   if (url.pathname.endsWith("/sw.js")) return;
 
-  // Bible books: use the saved copy if there is one.
-  if (url.pathname.includes("/data/kjv/")) {
+  // Bible books (every version's folder): use the saved copy if there is one.
+  if (/\/data\/(kjv|web|bbe|asv|ylt)\//.test(url.pathname)) {
     event.respondWith(cacheFirst(request, BIBLE_CACHE));
     return;
   }

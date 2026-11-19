@@ -59,7 +59,10 @@
     </button>
     <div class="bible-header-center">
       <h1 id="reader-title">Genesis 1</h1>
-      <span>KJV</span>
+      <button class="version-btn" id="version-open" aria-label="Change Bible version">
+        <span id="version-label">KJV</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
     </div>
     <div class="bible-header-icons">
       <button class="icon-btn" id="daily-open" aria-label="Daily reading">
@@ -114,6 +117,18 @@
     </div>
   </div>
 
+  <!-- Bible version modal -->
+  <div class="modal-overlay" id="version-modal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2 class="section-title" style="margin:0;">Bible version</h2>
+        <button class="modal-close" data-close="version-modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="version-list" class="version-list"></div>
+    </div>
+  </div>
   <!-- Daily reading modal -->
   <div class="modal-overlay" id="daily-modal">
     <div class="modal-sheet">

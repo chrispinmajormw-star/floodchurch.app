@@ -1,7 +1,7 @@
-// components/bible.js — full-page KJV reader (book/chapter picker, drop-cap
+// components/bible.js — full-page Bible reader (book/chapter picker, version picker, drop-cap
 // chapter numeral, floating prev/next) plus Daily Reading and Reading Plans
 // tucked behind icon buttons as bottom-sheet modals.
-//   • The Bible text is hosted in this app (data/kjv/…, see js/bible-text.js), so it
+//   • The Bible text is hosted in this app (data/<version>/…, see js/bible-text.js), so it
 //     loads fast, never depends on an outside service, and works offline once opened.
 //   • The search box understands references ("John 3:16", "rom 8:1-4", "psalm 23")
 //     AND plain words ("love one another").
@@ -14,7 +14,18 @@ import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { BIBLE_BOOKS } from "../bible-books.js";
 import { escapeHtml } from "../util.js";
-import { getChapter, getVerses, parseReference, searchText, splitForHighlight } from "../bible-text.js";
+import {
+  getChapter,
+  getVerses,
+  parseReference,
+  searchText,
+  splitForHighlight,
+  BIBLE_VERSIONS,
+  getVersion,
+  setVersion,
+  versionInfo,
+  savedBookCount,
+} from "../bible-text.js";
 
 const LAST_READ_KEY = "flood-bible-last";
 const SEARCH_LIMIT = 50;
@@ -58,6 +69,13 @@ function initBibleReader() {
   const prevBtn = document.getElementById("prev-chapter");
   const nextBtn = document.getElementById("next-chapter");
   const searchInput = document.getElementById("verse-search-input");
+  const versionLabel = document.getElementById("version-label");
+  const versionList = document.getElementById("version-list");
+
+  // Which version this phone reads (remembered), and how to redraw what's on screen when it changes.
+  let version = getVersion();
+  versionLabel.textContent = versionInfo(version).abbr;
+  let view = null;
 
   bookSelect.innerHTML = BIBLE_BOOKS.map((b) => `<option value="${b.name}">${b.name}</option>`).join("");
 
@@ -79,9 +97,42 @@ function initBibleReader() {
   }
 
   function showError(message, retry) {
-    statusEl.innerHTML = `${escapeHtml(message)} ${retry ? '<button class="chip" id="retry-load" style="padding:4px 10px;margin-left:6px;">Try again</button>' : ""}`;
+    // A version that isn't saved on this phone can't load without a signal: offer the way back to the KJV.
+    const toKjv = version !== "kjv" ? '<button class="chip" id="use-kjv" style="padding:4px 10px;margin-left:6px;">Use the KJV</button>' : "";
+    statusEl.innerHTML = `${escapeHtml(message)} ${retry ? '<button class="chip" id="retry-load" style="padding:4px 10px;margin-left:6px;">Try again</button>' : ""}${toKjv}`;
     const retryBtn = document.getElementById("retry-load");
     if (retryBtn && retry) retryBtn.addEventListener("click", retry);
+    const kjvBtn = document.getElementById("use-kjv");
+    if (kjvBtn) kjvBtn.addEventListener("click", () => chooseVersion("kjv"));
+  }
+
+  // ---- Bible version -------------------------------------------------------------------------
+  /** The list in the "Bible version" sheet; `saved` (how many books are on this phone) adds a "Saved offline" note. */
+  function renderVersionList(saved = null) {
+    versionList.innerHTML = BIBLE_VERSIONS.map((v, i) => {
+      const onPhone = saved && saved[i] >= BIBLE_BOOKS.length;
+      return `<button class="version-item${v.id === version ? " active" : ""}" data-version="${v.id}" aria-pressed="${v.id === version}">
+        <span class="v-name"><b>${escapeHtml(v.abbr)}</b>${escapeHtml(v.name)}</span>
+        <span class="v-side">${v.id === version ? '<span class="v-check">\u2713</span>' : onPhone ? '<span class="v-badge">Saved offline</span>' : ""}</span>
+        <span class="v-about">${escapeHtml(v.about)}</span>
+      </button>`;
+    }).join("");
+  }
+
+  async function openVersionPicker() {
+    renderVersionList();
+    openModal("version-modal");
+    const saved = await Promise.all(BIBLE_VERSIONS.map((v) => savedBookCount(v.id)));
+    renderVersionList(saved); // the "Saved offline" notes appear a moment later
+  }
+
+  /** Switches the Bible version and redraws whatever is on screen (chapter, verses or search) in it. */
+  function chooseVersion(id) {
+    closeModal("version-modal");
+    if (id === version) return;
+    version = setVersion(id);
+    versionLabel.textContent = versionInfo(version).abbr;
+    if (view) view();
   }
 
   function beginLoading(title, { banner = null } = {}) {
@@ -96,10 +147,11 @@ function initBibleReader() {
 
   /** A whole chapter, with the big chapter number in front of verse 1. */
   async function showChapter(bookName, chapter) {
+    view = () => showChapter(bookName, chapter);
     selectPassage(bookName, chapter);
     const id = beginLoading(`${bookName} ${chapter}`, { banner: String(chapter) === "1" ? bookName : null });
     try {
-      const verses = await getChapter(bookName, chapter);
+      const verses = await getChapter(bookName, chapter, version);
       if (id !== currentRequest) return;
       statusEl.textContent = "";
       const [first, ...rest] = verses;
@@ -114,13 +166,17 @@ function initBibleReader() {
 
   /** One verse or a short run of verses, with a shortcut to the full chapter. */
   async function showVerses(bookName, chapter, from, to) {
+    view = () => showVerses(bookName, chapter, from, to);
     selectPassage(bookName, chapter);
     const range = to && to !== from ? `${from}\u2013${to}` : `${from}`;
     const id = beginLoading(`${bookName} ${chapter}:${range}`);
     try {
-      const verses = await getVerses(bookName, chapter, from, to);
+      const verses = await getVerses(bookName, chapter, from, to, version);
       if (id !== currentRequest) return;
-      statusEl.textContent = "";
+      // Some translations leave out a few verses that older manuscripts have (e.g. Acts 8:37 in the WEB).
+      statusEl.textContent = verses.length
+        ? ""
+        : `${bookName} ${chapter}:${range} isn\u2019t in the ${versionInfo(version).abbr}. Some translations leave out verses that the oldest manuscripts don\u2019t have.`;
       textMount.innerHTML =
         verses.map((v) => `<span class="verse-num">${v.verse}</span>${escapeHtml(v.text)} `).join("") +
         `<div style="margin-top:18px;"><button class="chip" data-open-chapter="${escapeHtml(`${bookName} ${chapter}`)}">Read all of ${escapeHtml(bookName)} ${chapter}</button></div>`;
@@ -131,12 +187,14 @@ function initBibleReader() {
 
   /** Looks for words across the whole Bible and lists the verses that contain them. */
   async function showWordSearch(query) {
+    view = () => showWordSearch(query);
     const id = beginLoading("Search");
     try {
       const { results, truncated, terms } = await searchText(query, {
         limit: SEARCH_LIMIT,
+        version,
         onProgress: (done, total) => {
-          if (id === currentRequest) statusEl.textContent = `Searching the Bible… ${done} of ${total} books`;
+          if (id === currentRequest) statusEl.textContent = `Searching the ${versionInfo(version).abbr}… ${done} of ${total} books`;
         },
       });
       if (id !== currentRequest) return;
@@ -191,6 +249,12 @@ function initBibleReader() {
       const ref = parseReference(open.dataset.openChapter);
       if (ref && !ref.error) showChapter(ref.book, ref.chapter);
     }
+  });
+
+  document.getElementById("version-open").addEventListener("click", openVersionPicker);
+  versionList.addEventListener("click", (e) => {
+    const item = e.target.closest("[data-version]");
+    if (item) chooseVersion(item.dataset.version);
   });
 
   bookSelect.addEventListener("change", () => {
@@ -294,7 +358,7 @@ export async function renderBible() {
   if (readBtn && verse) {
     readBtn.addEventListener("click", () => {
       closeModal("daily-modal");
-      // "Romans 12:2 (NKJV)" → "Romans 12:2" — the reader always shows KJV.
+      // "Romans 12:2 (NKJV)" → "Romans 12:2" — the reader shows it in the version this person chose.
       reader.runSearch(String(verse.reference).replace(/\s*\(.*?\)\s*$/, ""));
     });
   }
