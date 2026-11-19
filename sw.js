@@ -13,7 +13,7 @@
 //     • Bible books (data/kjv, web, bbe, asv, ylt …) ... saved copy first (they never change)
 //     • Everything else (sign-in, uploads, YouTube, sending data) goes straight to the network.
 
-const SHELL_CACHE = "flood-shell-v6"; // pages, scripts, styles (versioned: replaced when this changes — BUMP THE NUMBER whenever app files change)
+const SHELL_CACHE = "flood-shell-v7"; // pages, scripts, styles (versioned: replaced when this changes — BUMP THE NUMBER whenever app files change)
 const DATA_CACHE = "flood-data"; // church content for the signed-in member (cleared on sign-out)
 const BIBLE_CACHE = "flood-bible"; // saved Bible books (kept across updates; js/bible-text.js uses this name)
 const AUDIO_CACHE = "flood-audio"; // podcasts/sermons saved on the phone (js/offline-audio.js uses this name)
@@ -41,7 +41,7 @@ const PRECACHE = [
   "index.html", "login.html", "css/style.css", "manifest.json", "assets/floodwhite.svg", "assets/icons/icon-192.png",
   "js/App.js", "js/auth.js", "js/icons.js", "js/theme.js", "js/supabaseClient.js", "js/vendor/supabase.js", "js/util.js",
   "js/notifications.js", "js/site-settings.js", "js/player.js", "js/offline-audio.js", "js/schedule.js", "js/push.js", "js/push-config.js",
-  "js/components/home.js",
+  "js/components/home.js", "js/poster-viewer.js",
   // the other tabs of the bottom bar, so they open instantly the first time as well
   "bible.html", "media.html", "give.html", "profile.html",
   "js/components/bible.js", "js/bible-text.js", "js/bible-books.js", "js/components/media.js", "js/components/give.js", "js/components/profile.js",

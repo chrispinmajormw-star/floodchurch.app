@@ -13,6 +13,8 @@ import { escapeHtml, timeAgo } from "../util.js";
 import { formatTime } from "../schedule.js";
 import { getPushHealth, sendTestPush } from "../push.js";
 import { ICONS } from "../icons.js";
+import { shrinkImage } from "../image-tools.js";
+import { posterUrl } from "../poster-viewer.js";
 
 function clip(text, n = 140) {
   const t = String(text ?? "").trim();
@@ -48,7 +50,9 @@ const SECTIONS = [
       { key: "event_date", label: "Date & time", type: "datetime-local" },
       { key: "location", label: "Location (optional)", type: "text", optional: true },
       { key: "description", label: "Full details (optional)", type: "textarea", optional: true },
+      { key: "poster_url", label: "Poster / flyer picture link (optional). Paste a link, or upload one below", type: "text", optional: true, newColumn: true },
     ],
+    fileField: { key: "poster_url", accept: "image/*", folder: "posters", label: "Upload a poster or flyer (a photo or picture of it)" },
     listLabel: (row) => `${row.title} — ${new Date(row.event_date).toLocaleString()}`,
     notify: {
       defaultOn: true,
@@ -71,7 +75,9 @@ const SECTIONS = [
       { key: "dates", label: "Dates / location line", type: "text" },
       { key: "cta_text", label: "Button text", type: "text", default: "Register" },
       { key: "cta_link", label: "Button link", type: "text" },
+      { key: "poster_url", label: "Poster / flyer picture link (optional). Paste a link, or upload one below", type: "text", optional: true, newColumn: true },
     ],
+    fileField: { key: "poster_url", accept: "image/*", folder: "posters", label: "Upload a poster or flyer (a photo or picture of it)" },
     listLabel: (row) => row.title,
     notify: {
       defaultOn: true,
@@ -260,8 +266,11 @@ function fieldInput(field) {
 }
 
 async function uploadFile(file, folder) {
-  const path = `${folder}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-  const { error } = await supabase.storage.from("media").upload(path, file);
+  // A photo (a poster or flyer) is made smaller first, so it opens quickly and doesn't use up members' mobile data.
+  const prepared = await shrinkImage(file);
+  const path = `${folder}/${Date.now()}-${prepared.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+  const options = /^image\//.test(prepared.type) ? { cacheControl: "31536000" } : undefined; // a picture never changes: keep it on the phone
+  const { error } = await supabase.storage.from("media").upload(path, prepared, options);
   if (error) throw error;
   const { data } = supabase.storage.from("media").getPublicUrl(path);
   return data.publicUrl;
@@ -317,8 +326,13 @@ function renderSection(section) {
       ${
         section.fileField
           ? `<div class="auth-field">
-               <label>Or upload a file</label>
+               <label>${escapeHtml(section.fileField.label || "Or upload a file")}</label>
                <input class="auth-input" type="file" accept="${section.fileField.accept}" data-file-for="${section.fileField.key}">
+               ${
+                 section.fileField.accept.startsWith("image/")
+                   ? `<div class="upload-preview" hidden><img alt="Preview of the poster"><button type="button" class="upload-remove">Remove poster</button></div>`
+                   : ""
+               }
                <p class="upload-status post-status"></p>
              </div>`
           : ""
@@ -346,10 +360,12 @@ function renderSection(section) {
   let maxOrder = 0;
   let minOrder = 0;
   let editingId = null;
+  let syncFilePreview = () => {}; // set below for a section with a picture upload
 
   function exitEdit() {
     editingId = null;
     form.reset();
+    syncFilePreview();
     banner.hidden = true;
     submitBtn.textContent = "Post";
     if (notifyLabel) notifyLabel.hidden = false;
@@ -361,6 +377,7 @@ function renderSection(section) {
     section.fields.forEach((f) => {
       form.elements[f.key].value = inputValue(f, row[f.key]);
     });
+    syncFilePreview();
     bannerText.textContent = `Editing: ${clip(section.listLabel(row), 60)}`;
     banner.hidden = false;
     submitBtn.textContent = "Save changes";
@@ -447,14 +464,36 @@ function renderSection(section) {
     const fileInput = wrap.querySelector(`[data-file-for="${section.fileField.key}"]`);
     const uploadStatus = wrap.querySelector(".upload-status");
     const urlInput = form.querySelector(`[name="${section.fileField.key}"]`);
+    const preview = wrap.querySelector(".upload-preview");
+
+    // A picture shows a small preview (and a Remove button) under the upload box.
+    syncFilePreview = () => {
+      if (!preview) return;
+      const shown = posterUrl(urlInput.value);
+      preview.hidden = !shown;
+      const img = preview.querySelector("img");
+      if (shown) img.src = shown;
+      else img.removeAttribute("src");
+    };
+    if (preview) {
+      urlInput.addEventListener("input", syncFilePreview);
+      preview.querySelector(".upload-remove").addEventListener("click", () => {
+        urlInput.value = "";
+        fileInput.value = "";
+        uploadStatus.textContent = "";
+        syncFilePreview();
+      });
+    }
+
     fileInput.addEventListener("change", async () => {
       const file = fileInput.files[0];
       if (!file) return;
-      uploadStatus.textContent = "Uploading…";
+      uploadStatus.textContent = preview ? "Preparing and uploading…" : "Uploading…";
       try {
         const url = await uploadFile(file, section.fileField.folder);
         urlInput.value = url;
-        uploadStatus.textContent = "Uploaded — link filled in above.";
+        syncFilePreview();
+        uploadStatus.textContent = preview ? "Uploaded. The poster is added above (press Post or Save changes to publish it)." : "Uploaded — link filled in above.";
       } catch (err) {
         uploadStatus.textContent = `Upload failed: ${err.message}`;
       }
@@ -470,6 +509,9 @@ function renderSection(section) {
       const changes = {};
       section.fields.forEach((f) => {
         const v = form.elements[f.key].value.trim();
+        // A new optional column that isn't in the database yet (the poster, before its one-line SQL has been run) is
+        // left alone while empty, so editing everything else keeps working.
+        if (f.newColumn && v === "" && !(f.key in (rowsById[editingId] || {}))) return;
         changes[f.key] = v === "" ? null : castValue(f, v); // clearing an optional field really clears it
       });
       submitBtn.disabled = true;
@@ -527,6 +569,7 @@ function renderSection(section) {
     }
 
     form.reset();
+    syncFilePreview();
     statusEl.textContent = message;
     loadList();
   });

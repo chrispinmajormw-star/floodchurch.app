@@ -4,6 +4,9 @@
 import { bootApp } from "../App.js";
 import { getViewer } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
+import { ICONS } from "../icons.js";
+import { openPoster, posterUrl } from "../poster-viewer.js";
+import { escapeHtml } from "../util.js";
 
 function formatWhen(iso) {
   return new Date(iso).toLocaleString(undefined, {
@@ -22,6 +25,24 @@ function openEventModal(event) {
   document.getElementById("event-modal-location").textContent = event.location || "";
   document.getElementById("event-modal-description").textContent =
     event.description || "No further details added yet.";
+
+  // The flyer, if the admin added one: a picture they can tap to see full screen.
+  const posterMount = document.getElementById("event-modal-poster");
+  const poster = posterUrl(event.poster_url);
+  if (poster) {
+    posterMount.innerHTML = `
+      <img src="${escapeHtml(poster)}" alt="" loading="lazy" decoding="async">
+      <span class="event-poster-tag">${ICONS.expand} View poster</span>`;
+    posterMount.hidden = false;
+    posterMount.onclick = () => openPoster({ url: poster, title: event.title });
+    posterMount.querySelector("img").addEventListener("error", () => {
+      posterMount.hidden = true; // not available right now (no signal): the details still show
+    });
+  } else {
+    posterMount.hidden = true;
+    posterMount.innerHTML = "";
+    posterMount.onclick = null;
+  }
   document.getElementById("event-modal").classList.add("open");
 }
 

@@ -12,6 +12,7 @@ import { escapeHtml, safeUrl } from "../util.js";
 import { youtubeThumbnail } from "../player.js";
 import { nextOccurrence, countdownText } from "../schedule.js";
 import { getPushStatus, enablePush } from "../push.js";
+import { openPoster, posterUrl } from "../poster-viewer.js";
 
 function nextServiceDate(day, hour) {
   const now = new Date();
@@ -299,13 +300,34 @@ export async function renderHome() {
   if (c) {
     bannerMount.style.display = "";
     const ctaUrl = safeUrl(c.cta_link);
+    const poster = posterUrl(c.poster_url); // the flyer the admin uploaded (a safe https picture), if any
+    bannerMount.classList.toggle("has-poster", Boolean(poster));
     bannerMount.innerHTML = `
-      <div class="eyebrow">${escapeHtml(c.eyebrow || "")}</div>
-      <h3>${escapeHtml(c.title)}</h3>
-      <p>${escapeHtml(c.dates || "")}</p>
-      ${ctaUrl ? `<button class="btn-dark" id="conference-cta">${escapeHtml(c.cta_text || "Register")}</button>` : ""}`;
+      <div class="conf-text">
+        <div class="eyebrow">${escapeHtml(c.eyebrow || "")}</div>
+        <h3>${escapeHtml(c.title)}</h3>
+        <p>${escapeHtml(c.dates || "")}</p>
+        ${ctaUrl ? `<button class="btn-dark" id="conference-cta">${escapeHtml(c.cta_text || "Register")}</button>` : ""}
+      </div>
+      ${
+        poster
+          ? `<button type="button" class="conf-poster" id="conference-poster" aria-label="View the poster for ${escapeHtml(c.title)}">
+               <img src="${escapeHtml(poster)}" alt="" loading="lazy" decoding="async">
+               <span class="conf-poster-zoom" aria-hidden="true">${ICONS.expand}</span>
+             </button>`
+          : ""
+      }`;
     const ctaBtn = document.getElementById("conference-cta");
     if (ctaBtn) ctaBtn.addEventListener("click", () => window.open(ctaUrl, "_blank"));
+    const posterBtn = document.getElementById("conference-poster");
+    if (posterBtn) {
+      posterBtn.addEventListener("click", () => openPoster({ url: poster, title: c.title }));
+      // No signal and the picture isn't saved on the phone: quietly go back to the plain banner.
+      posterBtn.querySelector("img").addEventListener("error", () => {
+        posterBtn.remove();
+        bannerMount.classList.remove("has-poster");
+      });
+    }
   } else {
     bannerMount.style.display = "none";
   }
