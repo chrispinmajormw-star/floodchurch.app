@@ -3,24 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a0a0c">
-<script>
-  // Apply saved theme/accent immediately, before first paint, to avoid a flash of the default theme.
-  (function () {
-    try {
-      var t = localStorage.getItem("flood-theme") || "dark";
-      var a = localStorage.getItem("flood-accent") || "#3b82f6";
-      var bg = t === "light" ? "#f5f6f8" : "#0a0a0c";
-      document.documentElement.setAttribute("data-theme", t);
-      document.documentElement.style.setProperty("--blue", a);
-      var metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (metaTheme) metaTheme.setAttribute("content", bg);
-    } catch (e) {}
-  })();
-</script>
 <title>Sign In — Flood Church</title>
-<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="css/style.css">
+<style>
+  .auth-forgot { display: block; text-align: right; margin: -4px 0 14px; font-size: 13.5px; }
+</style>
 </head>
 <body>
 <div class="app">
@@ -44,6 +31,7 @@
         <label for="password">Password</label>
         <input class="auth-input" type="password" id="password" required autocomplete="current-password">
       </div>
+      <a class="auth-forgot" href="forgot-password.html" id="forgot-link">Forgot password?</a>
       <button class="btn btn-primary auth-submit" type="submit" id="submit-btn">Sign in</button>
     </form>
 
@@ -67,6 +55,12 @@
   const submitBtn = document.getElementById("submit-btn");
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
+
+  // "Forgot password?" carries over an email they've already typed, so they don't type it twice.
+  document.getElementById("forgot-link").addEventListener("click", (e) => {
+    const typed = emailInput.value.trim();
+    if (typed) e.currentTarget.href = "forgot-password.html?email=" + encodeURIComponent(typed);
+  });
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
