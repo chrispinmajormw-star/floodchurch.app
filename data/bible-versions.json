@@ -1,0 +1,45 @@
+{
+  "default": "kjv",
+  "versions": [
+    {
+      "id": "kjv",
+      "abbr": "KJV",
+      "name": "King James Version",
+      "year": 1611,
+      "about": "The classic English Bible, the one this app has always used.",
+      "dir": "data/kjv"
+    },
+    {
+      "id": "web",
+      "abbr": "WEB",
+      "name": "World English Bible",
+      "year": 2000,
+      "about": "Modern, easy-to-read English. Uses “Yahweh” for God’s name.",
+      "dir": "data/web"
+    },
+    {
+      "id": "bbe",
+      "abbr": "BBE",
+      "name": "Bible in Basic English",
+      "year": 1949,
+      "about": "Written with only about 1,000 everyday words, so it is very easy to follow.",
+      "dir": "data/bbe"
+    },
+    {
+      "id": "asv",
+      "abbr": "ASV",
+      "name": "American Standard Version",
+      "year": 1901,
+      "about": "A careful word-for-word revision of the KJV. Uses “Jehovah” for God’s name.",
+      "dir": "data/asv"
+    },
+    {
+      "id": "ylt",
+      "abbr": "YLT",
+      "name": "Young’s Literal Translation",
+      "year": 1898,
+      "about": "Extremely literal: keeps the original word order and tenses. Good for study.",
+      "dir": "data/ylt"
+    }
+  ]
+}
