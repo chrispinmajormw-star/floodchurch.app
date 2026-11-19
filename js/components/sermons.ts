@@ -31,7 +31,7 @@ const sortKey = (item) => {
   return isNaN(t) ? 0 : t;
 };
 
-export async function renderSermons() {
+export async function renderSermons(): Promise<void>() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

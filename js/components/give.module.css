@@ -1,0 +1,38 @@
+/* give.module.css – scoped styles for the Give page */
+
+.give-page {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.give-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.give-form input,
+.give-form select {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.give-button {
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.give-button:hover {
+  background: var(--blue-dim);
+}

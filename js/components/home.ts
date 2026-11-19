@@ -4,6 +4,7 @@
 // everything else (devotion, sermons, events, conference, podcasts,
 // announcements, ministries, live status, verse of the day) is live Supabase data.
 import { bootApp, loadData } from "../App.js";
+import "./home.module.css";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
@@ -111,7 +112,7 @@ function thumbBackground(sermon, i) {
   return picture ? `url('${picture}') center/cover no-repeat, ${gradient}` : gradient;
 }
 
-export async function renderHome() {
+export async function renderHome(): Promise<void>() {
   const authUser = await requireAuth();
   if (!authUser) return; // requireAuth already redirected to login.html
 

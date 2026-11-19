@@ -270,7 +270,7 @@ function wireAppearance(mount) {
   });
 }
 
-export async function renderSettings() {
+export async function renderSettings(): Promise<void>() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

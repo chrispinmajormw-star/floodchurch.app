@@ -32,7 +32,7 @@ function rowHTML(n) {
     : `<div class="${cls}">${inner}</div>`;
 }
 
-export async function renderNotifications() {
+export async function renderNotifications(): Promise<void>() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

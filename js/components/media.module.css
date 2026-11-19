@@ -1,0 +1,44 @@
+/* media.module.css – scoped styles for the Media page */
+
+.media-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.media-tile:hover {
+  background: var(--surface-2);
+}
+
+.tile-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border-radius: var(--radius-pill);
+}
+
+.tile-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: var(--blue);
+}
+
+.tile-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tile-sub {
+  font-size: 13px;
+  color: var(--text-dim);
+}

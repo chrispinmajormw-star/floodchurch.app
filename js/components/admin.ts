@@ -5,7 +5,8 @@
 //           FAQs and the three "apply" lists.
 //   Pastors: Send a notification, the Prayer Requests inbox, devotions and
 //           verse of the day.
-import { bootApp } from "../App.js";
+import "./admin.module.css";
+
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { sendBroadcast, describePush } from "../notifications.js";
@@ -1163,7 +1164,7 @@ function renderApplicationsSection() {
   return wrap;
 }
 
-export async function renderAdmin() {
+export async function renderAdmin(): Promise<void>() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

@@ -9,7 +9,7 @@
 //     posted from the dashboard.
 //   • Reading Plans come from the reading_plans table; progress is real
 //     (days completed, one tap per day) and saved per member.
-import { bootApp, loadData } from "../App.js";
+import "./bible.module.css";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { BIBLE_BOOKS } from "../bible-books.js";
@@ -250,7 +250,7 @@ function todayISO() {
   return new Date().toLocaleDateString("en-CA");
 }
 
-export async function renderBible() {
+export async function renderBible(): Promise<void>() {
   const authUser = await requireAuth();
   if (!authUser) return;
 
