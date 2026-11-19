@@ -10,7 +10,7 @@ function prettyDate(isoDate) {
   return isNaN(d) ? isoDate : d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
 }
 
-export async function renderDevotions(): Promise<void>() {
+export async function renderDevotions() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

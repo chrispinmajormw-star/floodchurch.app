@@ -1,8 +1,0 @@
-/* devotions.module.css – scoped styles for the Devotions page */
-
-.devotions-page {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-}

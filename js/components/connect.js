@@ -64,7 +64,7 @@ export function buildGroups(site) {
   return groups;
 }
 
-export async function renderConnect(): Promise<void>() {
+export async function renderConnect() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

@@ -1,8 +1,0 @@
-/* connect.module.css – scoped styles for the Connect page */
-
-.connect-page {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-}

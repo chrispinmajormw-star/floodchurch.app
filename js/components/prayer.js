@@ -13,7 +13,7 @@ function timeAgo(iso) {
   return `${days}d ago`;
 }
 
-export async function renderPrayer(): Promise<void>() {
+export async function renderPrayer() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

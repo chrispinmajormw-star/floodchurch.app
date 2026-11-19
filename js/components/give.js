@@ -38,7 +38,7 @@ async function startErrorMessage(error) {
   return "We couldn\u2019t start your gift. Check your internet connection and try again.";
 }
 
-export async function renderGive(): Promise<void>() {
+export async function renderGive() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

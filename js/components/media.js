@@ -1,7 +1,7 @@
 // components/media.js — the Media page: Sermons / Live TV / Devotions tiles and the podcast
 // list. Podcasts and the live stream play inside the app; the tiles open the Sermons library
 // and the Devotions archive.
-import "./media.module.css";
+import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
@@ -10,7 +10,7 @@ import { nextOccurrence, describeOccurrence } from "../schedule.js";
 import { parseMedia } from "../player.js";
 import { audioSupported, bindDownloadButton } from "../offline-audio.js";
 
-export async function renderMedia(): Promise<void>() {
+export async function renderMedia() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

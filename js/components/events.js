@@ -38,7 +38,7 @@ function eventRow(event) {
     </div>`;
 }
 
-export async function renderEvents(): Promise<void>() {
+export async function renderEvents() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

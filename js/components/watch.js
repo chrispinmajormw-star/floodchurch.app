@@ -22,7 +22,7 @@ const KINDS = {
   podcast: { table: "podcasts", urlField: "audio_url", sub: (r) => r.sub || "", title: "Podcast", back: "media.html", list: "More podcasts" },
 };
 
-export async function renderWatch(): Promise<void>() {
+export async function renderWatch() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

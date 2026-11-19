@@ -5,7 +5,6 @@
 //
 // Supabase signs the person in with a one-time "recovery" session when they open the emailed link, and
 // that session is what allows the password to be changed. The link works once and expires.
-import "./auth-recovery.module.css";
 import { supabase } from "../supabaseClient.js";
 
 const MIN_PASSWORD = 8;
@@ -102,7 +101,7 @@ export function renderForgotPassword({ cooldownSeconds = 60 } = {}) {
 // reset-password.html
 // ---------------------------------------------------------------------------------------------
 /** @param {{waitMs?: number}} [options]  how long to wait for the emailed link to be recognised (default 3000) */
-export async function renderResetPassword(): Promise<void>({ waitMs = 3000 } = {}) {
+export async function renderResetPassword({ waitMs = 3000 } = {}) {
   const panels = { checking: $("reset-checking"), expired: $("reset-expired"), form: $("reset-form"), done: $("reset-done") };
   let stage = "checking";
   const show = (name) => {

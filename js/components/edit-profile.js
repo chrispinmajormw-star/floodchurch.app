@@ -4,7 +4,7 @@ import { bootApp } from "../App.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 
-export async function renderEditProfile(): Promise<void>() {
+export async function renderEditProfile() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

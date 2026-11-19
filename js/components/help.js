@@ -8,7 +8,7 @@ import { supabase } from "../supabaseClient.js";
 import { getSiteSettings } from "../site-settings.js";
 import { escapeHtml } from "../util.js";
 
-export async function renderHelp(): Promise<void>() {
+export async function renderHelp() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

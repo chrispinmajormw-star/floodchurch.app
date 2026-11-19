@@ -21,7 +21,7 @@ function deviceRowHTML(d) {
   </div>`;
 }
 
-export async function renderDownloads(): Promise<void>() {
+export async function renderDownloads() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

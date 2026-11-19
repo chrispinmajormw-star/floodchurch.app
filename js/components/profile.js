@@ -20,7 +20,7 @@ function formatMWK(amount) {
   return `MWK ${amount}`;
 }
 
-export async function renderProfile(): Promise<void>() {
+export async function renderProfile() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

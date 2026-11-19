@@ -12,7 +12,7 @@ import { escapeHtml, safeUrl } from "../util.js";
 
 const POLL_MS = 45000;
 
-export async function renderLive(): Promise<void>() {
+export async function renderLive() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

@@ -4,7 +4,7 @@ import { ICONS } from "../icons.js";
 import { requireAuth } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 
-export async function renderSavedSermons(): Promise<void>() {
+export async function renderSavedSermons() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

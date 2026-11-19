@@ -10,7 +10,7 @@ import { escapeHtml } from "../util.js";
 const RECHECK_MS = 4000;
 const MAX_AUTO_CHECKS = 8;
 
-export async function renderGiveResult(): Promise<void>() {
+export async function renderGiveResult() {
   const authUser = await requireAuth();
   if (!authUser) return;
 

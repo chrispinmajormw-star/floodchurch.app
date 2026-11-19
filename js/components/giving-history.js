@@ -8,7 +8,7 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-export async function renderGivingHistory(): Promise<void>() {
+export async function renderGivingHistory() {
   const authUser = await requireAuth();
   if (!authUser) return;
 
