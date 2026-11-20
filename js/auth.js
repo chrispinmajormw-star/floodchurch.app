@@ -30,6 +30,8 @@ const PAGE_REASONS = {
 };
 const ACTION_REASONS = {
   "save-sermon": "save sermons",
+  comment: "join the conversation",
+  love: "show some love",
   "reading-plan": "track your reading plans",
   alerts: "get alerts on your phone",
 };

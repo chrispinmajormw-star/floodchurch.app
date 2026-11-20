@@ -72,9 +72,23 @@ export async function renderWatch() {
     <div id="watch-player"></div>
     <h1 class="watch-title" id="watch-title"></h1>
     <p class="watch-sub" id="watch-sub"></p>
+    ${kind === "sermon" ? '<div id="watch-social"></div>' : ""}
     <div id="watch-upnext"></div>`;
   const playerMount = document.getElementById("watch-player");
   const upNext = document.getElementById("watch-upnext");
+
+  // Love, Share and Comments sit under a sermon (not a podcast or the live stream). They load after the player,
+  // so a slow connection never delays playback, and a failure there can never get in the way of watching.
+  let social = null;
+  let currentSermon = null;
+  if (kind === "sermon") {
+    import("./sermon-social.js")
+      .then((m) => {
+        social = m.mountSermonSocial(document.getElementById("watch-social"), { viewer: authUser });
+        if (currentSermon) social.show(currentSermon);
+      })
+      .catch(() => {});
+  }
   let player = null;
   let downloadChip = null;
 
@@ -137,6 +151,10 @@ export async function renderWatch() {
     const item = items[i];
     document.getElementById("watch-title").textContent = item.title;
     document.getElementById("watch-sub").textContent = item.subtitle || "";
+    if (kind === "sermon" && item.id) {
+      currentSermon = { id: item.id, title: item.title };
+      if (social) social.show(currentSermon);
+    }
     if (kind !== "live" && item.id) {
       try {
         history.replaceState(null, "", `watch.html?kind=${kind}&id=${encodeURIComponent(item.id)}`);
