@@ -18,6 +18,29 @@ export const BIBLE_VERSIONS = [
   { id: "asv", abbr: "ASV", name: "American Standard Version", year: 1901, about: "A careful word-for-word revision of the KJV. Uses \u201cJehovah\u201d for God\u2019s name." },
   { id: "ylt", abbr: "YLT", name: "Young\u2019s Literal Translation", year: 1898, about: "Extremely literal: keeps the original word order and tenses. Good for study." },
 ];
+
+/**
+ * Versions that are copyrighted (so their text can't be stored in this app). They are listed first in the picker, and
+ * tapping one opens the chapter being read on Bible Gateway, in that version. They are not "selectable" inside the app.
+ */
+export const LINKED_VERSIONS = [
+  {
+    id: "niv",
+    abbr: "NIV",
+    name: "New International Version",
+    year: 2011,
+    gateway: "NIV",
+    about: "Clear, modern English that is easy to read. Opens this chapter in Bible Gateway, because the NIV is copyrighted and can't be saved in the app.",
+  },
+];
+
+/** Where to read a chapter of a linked version (null if it isn't one). */
+export function linkedChapterUrl(id, book, chapter) {
+  const v = LINKED_VERSIONS.find((x) => x.id === id);
+  if (!v) return null;
+  return `https://www.biblegateway.com/passage/?search=${encodeURIComponent(`${book} ${chapter}`)}&version=${encodeURIComponent(v.gateway)}`;
+}
+
 export const DEFAULT_VERSION = "kjv";
 const VERSION_KEY = "flood-bible-version";
 

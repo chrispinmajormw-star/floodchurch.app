@@ -22,6 +22,8 @@ import {
   searchText,
   splitForHighlight,
   BIBLE_VERSIONS,
+  LINKED_VERSIONS,
+  linkedChapterUrl,
   getVersion,
   setVersion,
   versionInfo,
@@ -110,7 +112,16 @@ function initBibleReader() {
   // ---- Bible version -------------------------------------------------------------------------
   /** The list in the "Bible version" sheet; `saved` (how many books are on this phone) adds a "Saved offline" note. */
   function renderVersionList(saved = null) {
-    versionList.innerHTML = BIBLE_VERSIONS.map((v, i) => {
+    // Copyrighted versions (the NIV) come first. They open on Bible Gateway, because their text can't be kept in the app.
+    const linked = LINKED_VERSIONS.map(
+      (v) => `<button class="version-item version-link" data-linked="${escapeHtml(v.id)}">
+        <span class="v-name"><b>${escapeHtml(v.abbr)}</b>${escapeHtml(v.name)}</span>
+        <span class="v-side"><span class="v-badge v-badge-link">${ICONS.external}Bible Gateway</span></span>
+        <span class="v-about">${escapeHtml(v.about)}</span>
+      </button>`
+    ).join("");
+    const heading = linked ? '<p class="version-heading">Saved in this app (works offline)</p>' : "";
+    versionList.innerHTML = linked + heading + BIBLE_VERSIONS.map((v, i) => {
       const onPhone = saved && saved[i] >= BIBLE_BOOKS.length;
       return `<button class="version-item${v.id === version ? " active" : ""}" data-version="${v.id}" aria-pressed="${v.id === version}">
         <span class="v-name"><b>${escapeHtml(v.abbr)}</b>${escapeHtml(v.name)}</span>
@@ -254,6 +265,14 @@ function initBibleReader() {
 
   document.getElementById("version-open").addEventListener("click", openVersionPicker);
   versionList.addEventListener("click", (e) => {
+    const link = e.target.closest("[data-linked]");
+    if (link) {
+      // e.g. the NIV: read this same chapter on Bible Gateway (the version chosen inside the app stays as it was)
+      const url = linkedChapterUrl(link.dataset.linked, bookSelect.value, chapterSelect.value || 1);
+      closeModal("version-modal");
+      if (url) window.open(url, "_blank", "noopener");
+      return;
+    }
     const item = e.target.closest("[data-version]");
     if (item) chooseVersion(item.dataset.version);
   });

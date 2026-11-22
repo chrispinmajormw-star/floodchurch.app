@@ -18,6 +18,8 @@ export function hasStoredSession() {
 const PAGE_REASONS = {
   "give.html": "give to the church online",
   "give-result.html": "confirm your gift",
+  "growth.html": "join a Growth Group",
+  "growth-group.html": "chat with your Growth Group",
   "giving-history.html": "see your giving history",
   "prayer.html": "send a prayer request",
   "profile.html": "see your profile",

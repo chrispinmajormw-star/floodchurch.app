@@ -207,6 +207,33 @@ export async function renderHome() {
     )
     .join("");
 
+  // Growth Groups: one tap to join (or open) your group. A visitor is taken to the friendly sign-in screen first.
+  // Members who are already in a group see its name and how many new messages are waiting.
+  document.getElementById("growth-card")?.remove();
+  quickGrid.insertAdjacentHTML(
+    "afterend",
+    `<a class="growth-card" id="growth-card" href="${escapeHtml(authUser ? "growth.html" : loginUrl({ next: "growth.html" }))}">
+      <span class="growth-card-icon">${ICONS.users}</span>
+      <span class="growth-card-text"><b id="growth-card-title">Join a Growth Group</b><span id="growth-card-sub">Meet, chat and pray with believers in your area</span></span>
+      <span class="growth-card-badge" id="growth-card-badge" hidden></span>
+      <span class="chevron">${ICONS.chevron}</span>
+    </a>`
+  );
+  if (authUser) {
+    supabase
+      .rpc("growth_my_groups")
+      .then(({ data }) => {
+        if (!data || !data.length) return;
+        const unread = data.reduce((n, g) => n + (Number(g.unread) || 0), 0);
+        document.getElementById("growth-card-title").textContent = data.length === 1 ? "Your Growth Group" : "Your Growth Groups";
+        document.getElementById("growth-card-sub").textContent = unread > 0 ? `${unread} new ${unread === 1 ? "message" : "messages"}` : data.length === 1 ? data[0].name : `${data.length} groups`;
+        const badge = document.getElementById("growth-card-badge");
+        badge.textContent = unread > 99 ? "99+" : String(unread);
+        badge.hidden = unread === 0;
+      })
+      .catch(() => {}); // the card still works as "Join a Growth Group"
+  }
+
   // Hero — text comes from site settings, but the badge and Watch Live button
   // reflect the real media_live row.
   const live = liveRes.data;

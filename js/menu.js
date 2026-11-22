@@ -31,6 +31,7 @@ const GROUPS = [
     title: "Church",
     items: [
       { label: "Events", icon: "calendar", href: "events.html" },
+      { label: "Growth Groups", icon: "users", href: "growth.html", members: true },
       { label: "Be Involved", icon: "ministries", href: "be-involved.html", members: true },
       { label: "Discipleship", icon: "book", href: "discipleship.html", members: true },
     ],
