@@ -11,6 +11,7 @@
 //     (days completed, one tap per day) and saved per member.
 import { bootApp, loadData } from "../App.js";
 import { ICONS } from "../icons.js";
+import { highlightVerses, parseBibleLink } from "../bible-link.js";
 import { getViewer, loginUrl } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { BIBLE_BOOKS } from "../bible-books.js";
@@ -158,8 +159,8 @@ function initBibleReader() {
   }
 
   /** A whole chapter, with the big chapter number in front of verse 1. */
-  async function showChapter(bookName, chapter) {
-    view = () => showChapter(bookName, chapter);
+  async function showChapter(bookName, chapter, focus = null) {
+    view = () => showChapter(bookName, chapter, focus);
     selectPassage(bookName, chapter);
     const id = beginLoading(`${bookName} ${chapter}`, { banner: String(chapter) === "1" ? bookName : null });
     try {
@@ -171,8 +172,13 @@ function initBibleReader() {
         `<span class="reader-dropcap">${chapter}</span>${escapeHtml(first.text)} ` +
         rest.map((v) => `<span class="verse-num">${v.verse}</span>${escapeHtml(v.text)} `).join("");
       localStorage.setItem(LAST_READ_KEY, JSON.stringify({ book: bookName, chapter }));
+      // Arrived from a link to a verse (e.g. the Verse of the Day): mark it and scroll to it.
+      if (focus && focus.verse) {
+        const mark = highlightVerses(textMount, focus.verse, focus.to || focus.verse);
+        if (mark && mark.scrollIntoView) requestAnimationFrame(() => mark.scrollIntoView({ behavior: "smooth", block: "center" }));
+      }
     } catch (err) {
-      if (id === currentRequest) showError(err.message, () => showChapter(bookName, chapter));
+      if (id === currentRequest) showError(err.message, () => showChapter(bookName, chapter, focus));
     }
   }
 
@@ -318,13 +324,19 @@ function initBibleReader() {
     if (e.key === "Enter") runSearch(searchInput.value);
   });
 
-  // Restore last-read position, or default to John 3.
-  let start = { book: "John", chapter: 3 };
-  try {
-    const saved = JSON.parse(localStorage.getItem(LAST_READ_KEY));
-    if (saved && BIBLE_BOOKS.some((b) => b.name === saved.book)) start = saved;
-  } catch (e) {}
-  showChapter(start.book, Number(start.chapter));
+  // A link to a place in the Bible (bible.html?book=John&chapter=3&verse=16) opens exactly there; otherwise restore the
+  // last-read position, or default to John 3.
+  const link = parseBibleLink(location.search);
+  if (link) {
+    showChapter(link.book, link.chapter, link.verse ? { verse: link.verse, to: link.to } : null);
+  } else {
+    let start = { book: "John", chapter: 3 };
+    try {
+      const saved = JSON.parse(localStorage.getItem(LAST_READ_KEY));
+      if (saved && BIBLE_BOOKS.some((b) => b.name === saved.book)) start = saved;
+    } catch (e) {}
+    showChapter(start.book, Number(start.chapter));
+  }
 
   return { runSearch };
 }

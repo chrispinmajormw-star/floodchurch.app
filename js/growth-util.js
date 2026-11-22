@@ -39,31 +39,12 @@ export function listTime(iso, now = new Date()) {
   return sameDay(d, now) ? clockTime(iso) : dayLabel(iso, now);
 }
 
-/**
- * One line for the chat list: "Luke: Meeting at 6pm", "Announcement: …", "Joy: Photo", "Document: Sunday flyer.pdf",
- * or an invitation to say hello.
- */
+/** One line for the chat list: "Luke: Meeting at 6pm", "Announcement: …", or an invitation to say hello. */
 export function previewText(group) {
-  const text = String(group.last_body || "").replace(/\s+/g, " ").trim();
-  const kind = group.last_attachment_kind;
-  if (!text && !kind) return "No messages yet. Say hello!";
-  let what = text;
-  if (kind === "image") what = text ? `Photo: ${text}` : "Photo";
-  else if (kind === "file") what = `Document: ${text || group.last_attachment_name || "file"}`;
-  if (group.last_kind === "announcement") return `Announcement: ${what}`;
-  return group.last_author ? `${group.last_author}: ${what}` : what;
-}
-
-/**
- * Turns web addresses in ALREADY-ESCAPED text into links (http and https only). The text must have been through
- * escapeHtml first: that is what makes it impossible for anything written in a message to become markup.
- */
-export function linkify(escaped) {
-  return String(escaped).replace(/https?:\/\/(?:(?!&quot;|&#39;|&lt;|&gt;)[^\s<>"'])+/g, (url) => {
-    const trail = (/[.,;:!?)\]]+$/.exec(url) || [""])[0];
-    const clean = trail ? url.slice(0, -trail.length) : url;
-    return `<a href="${clean}" target="_blank" rel="noopener noreferrer nofollow">${clean}</a>${trail}`;
-  });
+  if (!group.last_body) return "No messages yet. Say hello!";
+  const text = String(group.last_body).replace(/\s+/g, " ").trim();
+  if (group.last_kind === "announcement") return `Announcement: ${text}`;
+  return group.last_author ? `${group.last_author}: ${text}` : text;
 }
 
 /** How many messages from the same person within this many minutes are shown as one run. */

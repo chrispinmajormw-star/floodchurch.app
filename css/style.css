@@ -2646,3 +2646,13 @@ a.notif-row:hover { border-color: #3a3b42; }
 /* --- keyboard focus is always visible; motion is gentle */
 .chat-icon-btn:focus-visible, .chat-send:focus-visible, .chat-mode:focus-visible, .emoji-btn:focus-visible, .emoji-tab:focus-visible, .attach-menu button:focus-visible, .pinned:focus-visible, .chat-jump:focus-visible, .msg-file:focus-visible, .msg-image:focus-visible, .tray-x:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .sk-line, .sk-circle, .msg-image.loading { animation: none; } .flash { transition: none; } }
+
+/* ===== Verse of the Day: tappable, and the verse you land on in the Bible ===== */
+a.verse-box { display: block; color: inherit; text-decoration: none; }
+a.verse-box[href]:active { transform: scale(0.99); }
+.verse-cta { display: flex; align-items: center; gap: 4px; margin-top: 12px; color: var(--gold); font-size: 13px; font-weight: 700; }
+.verse-cta[hidden] { display: none; }
+.verse-cta svg { width: 14px; height: 14px; }
+.reader-text mark.verse-flash { padding: 2px 0; border-radius: 3px; color: inherit; background: rgba(232, 181, 74, 0.5); box-decoration-break: clone; -webkit-box-decoration-break: clone; animation: verse-flash 6s ease-out forwards; }
+@keyframes verse-flash { to { background: rgba(232, 181, 74, 0.18); } }
+@media (prefers-reduced-motion: reduce) { .reader-text mark.verse-flash { animation: none; background: rgba(232, 181, 74, 0.28); } }

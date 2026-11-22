@@ -13,6 +13,8 @@ import { youtubeThumbnail } from "../player.js";
 import { nextOccurrence, countdownText } from "../schedule.js";
 import { getPushStatus, enablePush } from "../push.js";
 import { openPoster, posterUrl } from "../poster-viewer.js";
+import { chooseVerse } from "../verse-of-day.js";
+import { getVersion } from "../bible-text.js";
 
 function nextServiceDate(day, hour) {
   const now = new Date();
@@ -171,6 +173,7 @@ export async function renderHome() {
     liveRes,
     scheduleRes,
     verseRes,
+    verseList,
   ] = await Promise.all([
     loadData("data/home.json"),
     getSiteSettings(),
@@ -185,6 +188,7 @@ export async function renderHome() {
     supabase.from("media_live").select("*").eq("id", 1).maybeSingle(),
     supabase.from("live_schedule").select("*"),
     supabase.from("verse_of_day").select("*").order("verse_date", { ascending: false }).limit(1).maybeSingle(),
+    loadData("data/verses.json").catch(() => null), // the daily verses (if they can't load, the fixed verse below is shown)
   ]);
 
   if (authUser) {
@@ -250,8 +254,19 @@ export async function renderHome() {
   const serviceMeta = document.getElementById("service-meta");
   serviceMeta.innerHTML = `${escapeHtml(site.service_times)}<br>${escapeHtml(site.service_address)}`;
 
-  const verse = verseRes.data || home.verseOfDay;
-  document.getElementById("verse-text").textContent = `\u201c${verse.text}\u201d \u2014 ${verse.reference}`;
+  // A different verse every day (the same for everyone), unless a pastor posted one for today. Tapping it opens that chapter in the Bible.
+  const verse = chooseVerse({ verses: verseList && verseList.verses, posted: verseRes.data, fallback: home.verseOfDay, version: getVersion() });
+  document.getElementById("verse-text").textContent = `\u201c${verse.text}\u201d \u2014 ${verse.reference}${verse.label ? ` (${verse.label})` : ""}`;
+  const verseBox = document.getElementById("verse-box");
+  const verseCta = document.getElementById("verse-cta");
+  if (verse.link && verse.target) {
+    verseBox.setAttribute("href", verse.link);
+    verseCta.innerHTML = `Read ${escapeHtml(verse.target.book)} ${verse.target.chapter} in the Bible ${ICONS.chevron}`;
+    verseCta.hidden = false;
+  } else {
+    verseBox.removeAttribute("href"); // a reference we can't place in the Bible: just the verse, not a link
+    verseCta.hidden = true;
+  }
 
   // Today's devotion
   const d = devotionRes.data;
