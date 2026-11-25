@@ -46,9 +46,10 @@ export function listTime(iso, now = new Date()) {
 export function previewText(group) {
   const text = String(group.last_body || "").replace(/\s+/g, " ").trim();
   const kind = group.last_attachment_kind;
-  if (!text && !kind) return "No messages yet. Say hello!";
+  if (!text && !kind && !group.last_has_location) return "No messages yet. Say hello!";
   let what = text;
-  if (kind === "image") what = text ? `Photo: ${text}` : "Photo";
+  if (group.last_has_location) what = text ? `Location: ${text}` : "Location pin";
+  else if (kind === "image") what = text ? `Photo: ${text}` : "Photo";
   else if (kind === "file") what = `Document: ${text || group.last_attachment_name || "file"}`;
   if (group.last_kind === "announcement") return `Announcement: ${what}`;
   return group.last_author ? `${group.last_author}: ${what}` : what;

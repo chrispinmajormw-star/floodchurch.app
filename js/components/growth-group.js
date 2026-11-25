@@ -17,6 +17,7 @@ import { hueOf, initialOf, clockTime, layoutMessages, groupUrl, linkify } from "
 import { BUCKET, ACCEPT_DOCS, attachmentPath, createFileUrls, documentInfo, formatSize, prepareAttachment } from "../growth-files.js";
 import { emojiPanelHTML, emojiOnlyCount, insertAtCursor, rememberEmoji } from "../emoji-picker.js";
 import { openPoster } from "../poster-viewer.js";
+import { getCurrentPin, pinOf, mapsUrl, directionsUrl, formatCoords, accuracyText, isRough } from "../growth-location.js";
 
 const PAGE = 40; // messages loaded at a time
 const POLL_MS = 20000;
@@ -26,6 +27,8 @@ export const MAX_LENGTH = 2000;
 export function friendlyChatError(error, context = "") {
   const msg = String((error && error.message) || error || "");
   // the file-sharing update (SQL) hasn't been run, or the data service hasn't noticed it yet
+  if (/location_(lat|lng|accuracy)/i.test(msg) && /schema cache|could not find|does not exist/i.test(msg)) return "Location sharing isn't set up yet. Ask an admin to run the location update.";
+  if (/growth_messages_location_check/i.test(msg)) return "That location can't be shared.";
   if (/bucket not found/i.test(msg)) return "File sharing isn't switched on yet. Ask an admin to run the file-sharing update.";
   if (/schema cache|could not find the .{0,60}column|attachment_(path|name|kind|mime|size)/i.test(msg)) return "File sharing isn't fully set up yet. Ask an admin to run the file-sharing update.";
   if (/sending messages very quickly/i.test(msg)) return "You're sending messages very quickly. Please wait a moment.";
@@ -64,7 +67,7 @@ export async function renderGrowthGroup() {
   const st = {
     group: null, place: "", role: null, staff: false, me: { id: user.id, name: "" }, messages: [], hasMore: false, members: [], announce: false,
     firstUnreadId: null, unseen: 0, sheetOpen: false, lastServerAt: null, channel: null, pollTimer: null, readTimer: null, noteTimer: null, tmp: 0,
-    tray: null, preparing: false, panel: null, emojiTab: null, localByPath: new Map(),
+    tray: null, preparing: false, panel: null, emojiTab: null, localByPath: new Map(), locToken: 0,
   };
   const isMember = () => st.role !== null;
   const isLeader = () => st.role === "leader";
@@ -176,11 +179,26 @@ export async function renderGrowthGroup() {
 
   function actionsHTML(m) {
     const del = canDelete(m) && m._state !== "failed";
-    return `<div class="msg-actions">${m.body ? '<button type="button" data-act="copy">Copy</button>' : ""}${m.attachment_path && m.attachment_kind === "file" ? '<button type="button" data-act="open-file">Download</button>' : ""}${del ? '<button type="button" data-act="delete" class="danger">Delete</button>' : ""}</div>`;
+    return `<div class="msg-actions">${m.body ? '<button type="button" data-act="copy">Copy</button>' : ""}${pinOf(m) ? '<button type="button" data-act="copy-location">Copy location</button>' : ""}${m.attachment_path && m.attachment_kind === "file" ? '<button type="button" data-act="open-file">Download</button>' : ""}${del ? '<button type="button" data-act="delete" class="danger">Delete</button>' : ""}</div>`;
   }
 
-  /** The picture or document inside a message. */
+  /** A location pin inside a message: coordinates, and buttons that open it in the phone's maps. */
+  function locationHTML(pin) {
+    const acc = accuracyText(pin.accuracy);
+    return `<div class="msg-location">
+      <div class="loc-art" aria-hidden="true"><span class="loc-pin">${ICONS.pin}</span></div>
+      <div class="loc-info"><b>Location pin</b><span>${escapeHtml(formatCoords(pin.lat, pin.lng))}${acc ? ` \u00b7 ${escapeHtml(acc)}` : ""}</span></div>
+      <div class="loc-actions">
+        <a class="loc-btn" href="${mapsUrl(pin.lat, pin.lng)}" target="_blank" rel="noopener noreferrer">${ICONS.external}Open map</a>
+        <a class="loc-btn" href="${directionsUrl(pin.lat, pin.lng)}" target="_blank" rel="noopener noreferrer">Directions</a>
+      </div>
+    </div>`;
+  }
+
+  /** The picture, document or location pin inside a message. */
   function attachmentHTML(m) {
+    const pin = pinOf(m);
+    if (pin) return locationHTML(pin);
     if (!m.attachment_kind) return "";
     if (m.attachment_kind === "image") {
       const src = m._localUrl || st.localByPath.get(m.attachment_path) || files.peek(m.attachment_path);
@@ -208,12 +226,12 @@ export async function renderGrowthGroup() {
           ${actionsHTML(m)}
         </article>`;
     }
-    const big = !m.attachment_kind && emojiOnlyCount(m.body);
+    const big = !m.attachment_kind && !pinOf(m) && emojiOnlyCount(m.body);
     const status = m._state === "sending" ? `<span class="msg-status" aria-label="Sending">${ICONS.clock}</span>` : m._state === "failed" ? `<span class="msg-status failed" aria-label="Not sent">!</span>` : mine ? `<span class="msg-status" aria-label="Sent">${ICONS.check}</span>` : "";
     return `${unreadMark}
       <div class="msg ${mine ? "mine" : "theirs"}${item.startsRun ? " run-start" : ""}" data-id="${escapeHtml(m.id)}">
         ${!mine && item.startsRun ? `<span class="msg-name" style="--hue:${hueOf(m.author_name)}">${escapeHtml(m.author_name || "Member")}</span>` : ""}
-        <div class="msg-bubble${big ? ` emoji-only emoji-${big}` : ""}${m.attachment_kind ? ` has-${m.attachment_kind}` : ""}">${attachmentHTML(m)}${text}<span class="msg-meta"><time datetime="${escapeHtml(m.created_at)}">${escapeHtml(clockTime(m.created_at))}</time>${status}</span></div>
+        <div class="msg-bubble${big ? ` emoji-only emoji-${big}` : ""}${m.attachment_kind ? ` has-${m.attachment_kind}` : ""}${pinOf(m) ? " has-location" : ""}">${attachmentHTML(m)}${text}<span class="msg-meta"><time datetime="${escapeHtml(m.created_at)}">${escapeHtml(clockTime(m.created_at))}</time>${status}</span></div>
         ${m._state === "failed" ? `<div class="msg-failed">Not sent. <button type="button" data-act="retry">Retry</button><button type="button" data-act="discard">Delete</button></div>` : actionsHTML(m)}
       </div>`;
   }
@@ -227,7 +245,7 @@ export async function renderGrowthGroup() {
       el.innerHTML = "";
       return;
     }
-    const what = latest.body ? latest.body.replace(/\s+/g, " ").trim() : latest.attachment_kind === "image" ? "Photo" : latest.attachment_name || "Attachment";
+    const what = latest.body ? latest.body.replace(/\s+/g, " ").trim() : pinOf(latest) ? "Location pin" : latest.attachment_kind === "image" ? "Photo" : latest.attachment_name || "Attachment";
     el.dataset.target = latest.id;
     el.innerHTML = `<span class="pinned-icon">${ICONS.megaphone}</span><span class="pinned-text"><b>Announcement</b><span>${escapeHtml(what)}</span></span><span class="chevron">${ICONS.chevron}</span>`;
     el.hidden = false;
@@ -340,6 +358,7 @@ export async function renderGrowthGroup() {
         <div class="attach-menu" id="attach-menu" role="menu" hidden>
           <button type="button" role="menuitem" data-attach="image"><span class="attach-icon tone-image">${ICONS.image}</span>Picture</button>
           <button type="button" role="menuitem" data-attach="file"><span class="attach-icon tone-file">${ICONS.file}</span>Document</button>
+          <button type="button" role="menuitem" data-attach="location"><span class="attach-icon tone-location">${ICONS.pin}</span>Location</button>
         </div>
         <form class="chat-composer${st.announce || announceOnly ? " announcing" : ""}" id="chat-form" autocomplete="off">
           ${canAnnounce() && canChat() ? `<button type="button" class="chat-mode" id="chat-mode" aria-pressed="${st.announce}" aria-label="Send as an announcement" title="Send as an announcement">${ICONS.megaphone}</button>` : ""}
@@ -348,7 +367,7 @@ export async function renderGrowthGroup() {
             <div class="chat-input-row">
               <button type="button" class="chat-icon-btn" id="chat-emoji" aria-label="Emoji" aria-expanded="false">${ICONS.smile}</button>
               <textarea id="chat-input" rows="1" maxlength="${MAX_LENGTH}" placeholder="${announceOnly ? "Write an announcement…" : "Message"}" aria-label="Write a message"></textarea>
-              <button type="button" class="chat-icon-btn" id="chat-attach" aria-label="Attach a picture or document" aria-haspopup="menu" aria-expanded="false">${ICONS.paperclip}</button>
+              <button type="button" class="chat-icon-btn" id="chat-attach" aria-label="Attach a picture, document or location" aria-haspopup="menu" aria-expanded="false">${ICONS.paperclip}</button>
             </div>
           </div>
           <button type="submit" class="chat-send" id="chat-send" aria-label="Send" disabled>${ICONS.send}</button>
@@ -408,6 +427,18 @@ export async function renderGrowthGroup() {
       tray.innerHTML = "";
       return;
     }
+    if (t.kind === "location") {
+      const detail = t.finding ? "Allow location if your phone asks" : `${formatCoords(t.lat, t.lng)}${t.accuracy != null ? ` \u00b7 Accuracy ${accuracyText(t.accuracy)}` : ""}`;
+      const sub = t.finding ? "" : isRough(t.accuracy) ? "Not very precise. Try again outside, or send it anyway." : "Only people in this group will see it.";
+      tray.innerHTML = `
+        <div class="tray-item">
+          <span class="tray-pin${t.finding ? " finding" : ""}">${ICONS.pin}</span>
+          <span class="tray-info"><b>${t.finding ? "Finding your location\u2026" : "Your current location"}</b><span>${escapeHtml(detail)}</span>${sub ? `<span>${escapeHtml(sub)}</span>` : ""}</span>
+          <button type="button" class="tray-x" id="attach-remove" aria-label="${t.finding ? "Cancel" : "Remove the location"}">${ICONS.x}</button>
+        </div>`;
+      tray.hidden = false;
+      return;
+    }
     const info = documentInfo(t.name);
     tray.innerHTML = `
       <div class="tray-item">
@@ -419,9 +450,39 @@ export async function renderGrowthGroup() {
   }
 
   function clearTray() {
+    if (st.tray && st.tray.finding) {
+      st.locToken++; // they cancelled while it was still looking: whatever the phone answers later is ignored
+      st.preparing = false;
+    }
     st.tray = null;
     renderTray();
     refreshSend();
+  }
+
+  /** "Location" in the attach menu: ask the phone where it is, show it in the tray, send only when they tap Send. */
+  async function pickLocation() {
+    if (st.preparing) return;
+    closePanels();
+    const token = ++st.locToken;
+    st.preparing = true;
+    st.tray = { kind: "location", finding: true };
+    note("");
+    renderTray();
+    refreshSend();
+    try {
+      const pin = await getCurrentPin();
+      if (token !== st.locToken) return; // cancelled meanwhile
+      st.tray = { kind: "location", ...pin };
+      note("");
+    } catch (err) {
+      if (token !== st.locToken) return;
+      st.tray = null;
+      note(err.message || "Couldn't get your location. Please try again.");
+    }
+    st.preparing = false;
+    renderTray();
+    refreshSend();
+    if (input()) input().focus();
   }
 
   async function pickFile(file) {
@@ -449,7 +510,9 @@ export async function renderGrowthGroup() {
     const body = text.trim();
     if (!body && !attachment) return;
     const temp = { id: `tmp-${++st.tmp}`, group_id: gid, user_id: st.me.id, author_name: st.me.name || "You", kind, body, created_at: new Date().toISOString(), _state: "sending" };
-    if (attachment) {
+    if (attachment && attachment.kind === "location") {
+      Object.assign(temp, { location_lat: attachment.lat, location_lng: attachment.lng, location_accuracy: attachment.accuracy });
+    } else if (attachment) {
       Object.assign(temp, { attachment_kind: attachment.kind, attachment_name: attachment.name, attachment_mime: attachment.mime, attachment_size: attachment.size, _file: attachment.file, _localUrl: attachment.previewUrl });
     }
     st.messages.push(temp);
@@ -475,6 +538,7 @@ export async function renderGrowthGroup() {
     }
     const row = { group_id: gid, user_id: st.me.id, kind: temp.kind, body: temp.body };
     if (temp.attachment_path) Object.assign(row, { attachment_path: temp.attachment_path, attachment_name: temp.attachment_name, attachment_kind: temp.attachment_kind, attachment_mime: temp.attachment_mime, attachment_size: temp.attachment_size });
+    if (temp.location_lat != null) Object.assign(row, { location_lat: temp.location_lat, location_lng: temp.location_lng, location_accuracy: temp.location_accuracy ?? null });
     const { data, error } = await supabase.from("growth_messages").insert(row).select().single();
     const i = st.messages.indexOf(temp);
     if (error || !data) return fail(error);
@@ -575,6 +639,7 @@ export async function renderGrowthGroup() {
     const attach = el.closest("[data-attach]");
     if (attach) {
       closePanels();
+      if (attach.dataset.attach === "location") return pickLocation(); // (called straight from the tap, so the phone is allowed to ask)
       $(attach.dataset.attach === "image" ? "pick-image" : "pick-doc").click();
       return;
     }
@@ -624,6 +689,15 @@ export async function renderGrowthGroup() {
           note("Copied");
         } catch (err) {
           window.prompt("Copy this message", m.body);
+        }
+      } else if (what === "copy-location") {
+        const pin = pinOf(m);
+        if (!pin) return;
+        try {
+          await navigator.clipboard.writeText(formatCoords(pin.lat, pin.lng));
+          note("Copied");
+        } catch (err) {
+          window.prompt("Copy this location", formatCoords(pin.lat, pin.lng));
         }
       } else if (what === "view-image") {
         if (m._state === "sending" || m._state === "failed") return; // not sent yet

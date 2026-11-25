@@ -2647,7 +2647,28 @@ a.notif-row:hover { border-color: #3a3b42; }
 .chat-icon-btn:focus-visible, .chat-send:focus-visible, .chat-mode:focus-visible, .emoji-btn:focus-visible, .emoji-tab:focus-visible, .attach-menu button:focus-visible, .pinned:focus-visible, .chat-jump:focus-visible, .msg-file:focus-visible, .msg-image:focus-visible, .tray-x:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .sk-line, .sk-circle, .msg-image.loading { animation: none; } .flash { transition: none; } }
 
-/* ===== Verse of the Day: tappable, and the verse you land on in the Bible ===== */
+/* ===== Growth Groups: location pins ===== */
+.tone-location { background: #10b981; }
+.tray-pin { flex: 0 0 auto; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #10b981; color: #fff; }
+.tray-pin svg { width: 22px; height: 22px; }
+.tray-pin.finding { animation: pin-pulse 1.2s ease-in-out infinite; }
+@keyframes pin-pulse { 50% { transform: scale(0.88); opacity: 0.7; } }
+@media (prefers-reduced-motion: reduce) { .tray-pin.finding { animation: none; opacity: 0.8; } }
+.tray-info span + span { margin-top: 1px; }
+.msg-location { width: 100%; min-width: 240px; margin-bottom: 4px; border-radius: 12px; overflow: hidden; background: rgba(127, 127, 127, 0.16); }
+.announcement .msg-location { margin-top: 8px; max-width: 340px; }
+.loc-art { height: 96px; display: flex; align-items: center; justify-content: center; background: linear-gradient(rgba(127, 127, 127, 0.18) 1px, transparent 1px) 0 0 / 26px 26px, linear-gradient(90deg, rgba(127, 127, 127, 0.18) 1px, transparent 1px) 0 0 / 26px 26px, rgba(16, 185, 129, 0.16); }
+.loc-pin { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #e5484d; color: #fff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+.loc-pin svg { width: 24px; height: 24px; }
+.loc-info { display: flex; flex-direction: column; gap: 1px; padding: 8px 10px 4px; }
+.loc-info b { font-size: 14px; }
+.loc-info span { font-size: 12.5px; opacity: 0.75; word-break: break-all; }
+.loc-actions { display: flex; gap: 8px; padding: 6px 10px 10px; }
+.loc-btn { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 0 10px; border-radius: 999px; background: rgba(127, 127, 127, 0.22); color: inherit; font-size: 13.5px; font-weight: 700; text-decoration: none; }
+.loc-btn svg { width: 15px; height: 15px; }
+.has-location .msg-text, .has-location .msg-meta { padding: 2px 8px 0; }
+
+/* ===== Verse of the Day: tappable, and the verse you land on in the Bible =====
 a.verse-box { display: block; color: inherit; text-decoration: none; }
 a.verse-box[href]:active { transform: scale(0.99); }
 .verse-cta { display: flex; align-items: center; gap: 4px; margin-top: 12px; color: var(--gold); font-size: 13px; font-weight: 700; }
