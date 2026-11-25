@@ -2668,7 +2668,7 @@ a.notif-row:hover { border-color: #3a3b42; }
 .loc-btn svg { width: 15px; height: 15px; }
 .has-location .msg-text, .has-location .msg-meta { padding: 2px 8px 0; }
 
-/* ===== Verse of the Day: tappable, and the verse you land on in the Bible =====
+/* ===== Verse of the Day: tappable, and the verse you land on in the Bible ===== */
 a.verse-box { display: block; color: inherit; text-decoration: none; }
 a.verse-box[href]:active { transform: scale(0.99); }
 .verse-cta { display: flex; align-items: center; gap: 4px; margin-top: 12px; color: var(--gold); font-size: 13px; font-weight: 700; }
