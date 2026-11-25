@@ -31,3 +31,11 @@ export function safeUrl(url) {
   if (/^https?:\/\/\S+$/i.test(u)) return u;
   return null;
 }
+
+/** A small calendar tile ("NOV" over "28") for an event's date. Empty if the date isn't a real date. */
+export function dateBadge(iso) {
+  const d = new Date(iso);
+  if (!iso || Number.isNaN(d.getTime())) return "";
+  const month = d.toLocaleString(undefined, { month: "short" }).replace(/\./g, "").toUpperCase();
+  return `<span class="date-badge" aria-hidden="true"><span>${escapeHtml(month)}</span><b>${d.getDate()}</b></span>`;
+}

@@ -8,7 +8,7 @@ import { ICONS } from "../icons.js";
 import { getViewer, loginUrl, signupUrl } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { getSiteSettings } from "../site-settings.js";
-import { escapeHtml, safeUrl } from "../util.js";
+import { escapeHtml, safeUrl, dateBadge } from "../util.js";
 import { youtubeThumbnail } from "../player.js";
 import { nextOccurrence, countdownText } from "../schedule.js";
 import { getPushStatus, enablePush } from "../push.js";
@@ -339,6 +339,7 @@ export async function renderHome() {
             : ""
         }
         <a class="event-main" href="events.html?id=${escapeHtml(e.id)}">
+          ${dateBadge(e.event_date)}
           <div class="event-text">
             <p class="e-title">${escapeHtml(e.title)}</p>
             <p class="e-sub">${escapeHtml(new Date(e.event_date).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }))}${e.location ? " · " + escapeHtml(e.location) : ""}</p>

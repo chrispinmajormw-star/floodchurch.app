@@ -45,9 +45,9 @@ export async function renderProfile() {
   const totalGiven = (giftsRes.data || []).reduce((sum, g) => sum + Number(g.amount), 0);
   const savedCount = sermonsRes.count ?? 0;
 
-  document.getElementById("avatar").textContent = profile.avatar_initial;
+  document.getElementById("avatar").textContent = profile.avatar_initial || String(profile.name || "?").trim().charAt(0).toUpperCase() || "?";
   document.getElementById("profile-name").textContent = profile.name;
-  document.getElementById("member-id").textContent = `Member ID \u00b7 ${profile.member_id}`;
+  document.getElementById("member-id").textContent = `Member ID \u00b7 ${profile.member_id || "\u2014"}`;
   document.getElementById("tag-line").innerHTML = [profile.group_name, profile.team]
     .filter(Boolean)
     .join('<span class="sep">&middot;</span>');

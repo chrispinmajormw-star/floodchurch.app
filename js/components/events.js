@@ -6,7 +6,7 @@ import { getViewer } from "../auth.js";
 import { supabase } from "../supabaseClient.js";
 import { ICONS } from "../icons.js";
 import { openPoster, posterUrl } from "../poster-viewer.js";
-import { escapeHtml } from "../util.js";
+import { escapeHtml, dateBadge } from "../util.js";
 
 function formatWhen(iso) {
   return new Date(iso).toLocaleString(undefined, {
@@ -48,10 +48,11 @@ function openEventModal(event) {
 
 function eventRow(event) {
   return `
-    <div class="event-row" data-id="${event.id}" style="cursor:pointer;">
-      <div>
-        <p class="e-title">${event.title}</p>
-        <p class="e-sub">${formatWhen(event.event_date)}${event.location ? " · " + event.location : ""}</p>
+    <div class="event-row" data-id="${escapeHtml(event.id)}" style="cursor:pointer;">
+      ${dateBadge(event.event_date)}
+      <div class="event-text">
+        <p class="e-title">${escapeHtml(event.title)}</p>
+        <p class="e-sub">${escapeHtml(formatWhen(event.event_date))}${event.location ? " · " + escapeHtml(event.location) : ""}</p>
       </div>
       <div class="chevron">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>

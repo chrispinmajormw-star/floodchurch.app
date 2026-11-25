@@ -1,0 +1,8 @@
+Plus Jakarta Sans — Copyright 2020 The Plus Jakarta Sans Project Authors (https://github.com/tokotype/PlusJakartaSans)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is available with a FAQ at: https://openfontlicense.org
+
+The font file in this folder (plus-jakarta-sans-latin-wght-normal.woff2) is the unmodified Latin subset distributed by
+Fontsource (@fontsource-variable/plus-jakarta-sans). It may be used, studied, copied, merged, embedded, modified,
+redistributed and sold, as long as it is not sold by itself and this notice stays with it.
