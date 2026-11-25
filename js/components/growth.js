@@ -28,15 +28,17 @@ export function friendlyGrowthError(error) {
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 export async function renderGrowth() {
+  const root = document.getElementById("growth-root");
+  // placeholders at once, so the page is never blank while we check who you are and fetch your groups
+  root.innerHTML = `<div class="hub-skeleton" aria-hidden="true">${[0, 1, 2].map(() => '<div class="hub-skel-row"><span class="sk-circle"></span><span class="sk-title"><span class="sk-line" style="width:60%"></span><span class="sk-line short"></span></span></div>').join("")}</div>`;
   const user = await requireAuth();
   if (!user) return;
   bootApp({ back: true, backHref: "index.html", rightIcon: null, title: "Growth Groups" });
-  const root = document.getElementById("growth-root");
 
   const st = { mine: [], locations: [], countByLocation: new Map(), groupsByLocation: new Map(), staff: false, chosen: null, groupsHere: null, loadingHere: false, notice: "", manageOpen: false, failed: false };
 
   // ------------------------------------------------------------------ loading
-  async function load() {
+  async function load(prefetchLocation = null) {
     let results;
     try {
       results = await Promise.all([
@@ -44,12 +46,15 @@ export async function renderGrowth() {
         supabase.from("growth_locations").select("*").order("sort_order", { ascending: true }).order("name", { ascending: true }),
         supabase.from("growth_groups").select("*").order("name", { ascending: true }),
         supabase.from("profiles").select("is_admin, is_pastor").eq("id", user.id).maybeSingle(),
+        // the groups of the location they looked at last time, asked for at the same moment (saves a whole round trip)
+        prefetchLocation ? supabase.rpc("growth_groups_at", { loc: prefetchLocation }) : Promise.resolve(null),
       ]);
     } catch (e) {
       st.failed = true;
       return;
     }
-    const [mineRes, locRes, groupRes, profRes] = results;
+    const [mineRes, locRes, groupRes, profRes, nearRes] = results;
+    st.prefetched = nearRes ? { id: prefetchLocation, data: nearRes.data || [], error: nearRes.error } : null;
     if (locRes.error || groupRes.error) {
       st.failed = true;
       return;
@@ -99,7 +104,7 @@ export async function renderGrowth() {
             <span class="chat-row-main">
               <span class="chat-row-top"><b class="chat-row-name">${escapeHtml(g.name)}</b><time class="chat-row-time">${escapeHtml(listTime(g.last_at))}</time></span>
               <span class="chat-row-sub">${ICONS.pin}${escapeHtml(g.location_name)}${g.role === "leader" ? ' · <span class="leader-tag">Leader</span>' : ""}</span>
-              <span class="chat-row-bottom"><span class="chat-row-preview">${escapeHtml(previewText(g))}</span>${g.unread > 0 ? `<span class="unread-badge" aria-label="${g.unread} unread">${g.unread > 99 ? "99+" : g.unread}</span>` : ""}</span>
+              <span class="chat-row-bottom"><span class="chat-row-preview">${g.last_attachment_kind ? `<span class="preview-icon">${g.last_attachment_kind === "image" ? ICONS.image : ICONS.file}</span>` : ""}${escapeHtml(previewText(g))}</span>${g.unread > 0 ? `<span class="unread-badge" aria-label="${g.unread} unread">${g.unread > 99 ? "99+" : g.unread}</span>` : ""}</span>
             </span>
           </a>`
           )
@@ -116,7 +121,7 @@ export async function renderGrowth() {
       return `
         <section class="find-card">
           <h2 class="section-title">${heading}</h2>
-          <p class="find-empty">No Growth Groups have been set up yet. Please check back soon.</p>
+          <div class="find-none"><span class="state-icon">${ICONS.users}</span><p class="find-empty">No Growth Groups have been set up yet. Please check back soon.</p></div>
         </section>`;
     }
     if (!st.chosen) {
@@ -315,17 +320,22 @@ export async function renderGrowth() {
   }, true);
 
   // ------------------------------------------------------------------ go
-  root.innerHTML = '<p class="find-empty">Loading…</p>';
-  await load();
   let remembered = null;
   try {
     remembered = localStorage.getItem(LOCATION_KEY);
   } catch (e) {
     /* nothing remembered */
   }
-  // First visit with no group yet: go straight to the groups in the location they looked at last time.
+  await load(remembered);
+  // No group yet: go straight to the groups in the location they looked at last time (already fetched with everything else).
   if (!st.failed && !st.mine.length && remembered && st.locations.some((l) => l.id === remembered)) {
     st.chosen = remembered;
+    if (st.prefetched && st.prefetched.id === remembered && !st.prefetched.error) {
+      st.groupsHere = st.prefetched.data;
+      st.loadingHere = false;
+      render();
+      return;
+    }
     render();
     openLocation(remembered);
     return;
