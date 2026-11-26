@@ -2761,9 +2761,10 @@ a.verse-box[href]:active { transform: scale(0.99); }
   --text: #f4f5f8;
   --text-dim: #a4a7b2;
   --text-faint: #8a8e9b;
-  --radius-lg: 24px;
-  --radius-md: 16px;
-  --nav-bg: rgba(11, 12, 16, 0.84);
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-btn: 14px;
+  --nav-bg: rgba(11, 12, 16, 0.98);
   --card-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 65%), var(--surface);
   --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 14px 32px -16px rgba(0, 0, 0, 0.75);
   --accent-soft: var(--blue-dim);
@@ -2777,7 +2778,7 @@ a.verse-box[href]:active { transform: scale(0.99); }
   --text: #12141b;
   --text-dim: #565a66;
   --text-faint: #666a78;
-  --nav-bg: rgba(255, 255, 255, 0.88);
+  --nav-bg: rgba(255, 255, 255, 0.98);
   --card-bg: var(--surface);
   --card-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 14px 30px -16px rgba(16, 24, 40, 0.22);
 }
@@ -2798,7 +2799,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px s
   box-shadow: var(--card-shadow);
 }
 .card, .devotion-card { border-radius: var(--radius-lg); }
-.list-row, .event-row, .announcement-row { border-radius: 20px; }
+.list-row, .event-row, .announcement-row { border-radius: 14px; }
 
 /* -- top bar and bottom bar -- */
 .topbar { padding: 14px 20px 12px; border-bottom: 0; box-shadow: 0 1px 0 var(--border); backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5); }
@@ -2806,17 +2807,20 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px s
 .topbar .icon-btn { width: 44px; height: 44px; background: var(--surface-2); color: var(--text); }
 .brand .mark { box-shadow: 0 0 0 3px var(--accent-soft); }
 .brand .word b { letter-spacing: 0.06em; }
-.bottomnav { border-top: 0; box-shadow: 0 -1px 0 var(--border), 0 -20px 40px -26px rgba(0, 0, 0, 0.55); backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5); }
+.bottomnav { z-index: 30; border-top: 0; box-shadow: 0 -1px 0 var(--border), 0 -20px 40px -26px rgba(0, 0, 0, 0.55); backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5); }
 .navitem { gap: 3px; font-size: 11px; font-weight: 700; letter-spacing: 0.01em; transition: color 0.2s ease; }
 .navitem svg { box-sizing: content-box; width: 22px; height: 22px; padding: 5px 17px; border-radius: 999px; transition: background-color 0.25s ease, transform 0.15s ease; }
 .navitem.active svg { background: var(--accent-soft); }
 .navitem:active svg { transform: scale(0.9); }
 
 /* -- buttons -- */
-.btn { min-height: 46px; padding: 0 22px; font-size: 14.5px; transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.btn { min-height: 46px; padding: 12px 22px; line-height: 1.3; border-radius: var(--radius-btn); font-size: 14.5px; transition: transform 0.12s ease, box-shadow 0.2s ease; }
 .btn-primary { box-shadow: 0 10px 22px -10px var(--accent-fill, var(--blue)); }
 .btn-ghost { background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-.btn-gold { min-height: 46px; box-shadow: 0 10px 22px -10px rgba(224, 151, 58, 0.8); }
+.btn-gold { min-height: 46px; border-radius: var(--radius-btn); box-shadow: 0 10px 22px -10px rgba(224, 151, 58, 0.8); }
+.btn-dark { border-radius: var(--radius-btn); }
+.stat, .amount-input { border-radius: 14px; }
+.gate-create { display: flex; align-items: center; justify-content: center; }
 .btn:active, .btn-gold:active, .quick-item:active, .event-row:active, .announcement-row:active, .podcast-row:active, .growth-card:active, .list-row:active { transform: scale(0.97); }
 .quick-item, .event-row, .announcement-row, .podcast-row, .growth-card, .list-row { transition: transform 0.12s ease, box-shadow 0.2s ease; }
 
@@ -2824,7 +2828,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px s
 .greeting { font-size: 14.5px; font-weight: 500; }
 .greeting-name { font-size: 30px; font-weight: 800; letter-spacing: -0.025em; margin: 2px 0 18px; }
 .hero {
-  min-height: 244px; margin-bottom: 0; padding: 22px 22px 54px; border-radius: 28px; box-shadow: var(--card-shadow);
+  min-height: 244px; margin-bottom: 0; padding: 22px 22px 54px; border-radius: 20px; box-shadow: var(--card-shadow);
   background: radial-gradient(120% 95% at 88% -10%, var(--blue-dim), transparent 62%), radial-gradient(90% 80% at 0% 105%, rgba(139, 92, 246, 0.42), transparent 62%), linear-gradient(165deg, #131722, #07080c);
 }
 @supports (color: color-mix(in srgb, red, blue)) {
@@ -2832,23 +2836,23 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px s
 }
 .hero h3 { font-size: 23px; line-height: 1.22; letter-spacing: -0.02em; margin: 12px 0 18px; max-width: 94%; }
 .live-tag { font-size: 11px; padding: 6px 12px 6px 10px; letter-spacing: 0.08em; box-shadow: 0 8px 18px -8px rgba(229, 72, 77, 0.8); }
-.next-service { position: relative; z-index: 2; margin: -36px 12px 18px; padding: 18px 20px; border-radius: 22px; background: var(--card-bg); box-shadow: var(--card-shadow); }
+.next-service { position: relative; z-index: 2; margin: -36px 12px 18px; padding: 18px 20px; border-radius: 16px; background: var(--card-bg); box-shadow: var(--card-shadow); }
 .next-service .label { font-size: 12px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-dim); }
 .countdown { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-bottom: 8px; }
 .service-meta { font-size: 13.5px; line-height: 1.5; color: var(--text-dim); }
 
 .quick-grid { gap: 12px; margin-bottom: 18px; }
-.quick-item { background: var(--card-bg); box-shadow: var(--card-shadow); border-radius: 20px; padding: 14px 4px 13px; gap: 9px; font-size: 12px; font-weight: 700; color: var(--text); }
-.quick-item svg { box-sizing: content-box; width: 22px; height: 22px; padding: 10px; border-radius: 16px; background: var(--accent-soft); color: var(--tint, var(--blue)); }
+.quick-item { background: var(--card-bg); box-shadow: var(--card-shadow); border-radius: 14px; padding: 14px 4px 13px; gap: 9px; font-size: 12px; font-weight: 700; color: var(--text); }
+.quick-item svg { box-sizing: content-box; width: 22px; height: 22px; padding: 10px; border-radius: 12px; background: var(--accent-soft); color: var(--tint, var(--blue)); }
 .quick-item:nth-child(1) { --tint: #a78bfa; }
 .quick-item:nth-child(3) { --tint: #fb7185; }
 .quick-item:nth-child(4) { --tint: #fbbf24; }
 @supports (color: color-mix(in srgb, red, blue)) {
   .quick-item svg { background: color-mix(in srgb, var(--tint, var(--blue)) 17%, transparent); }
 }
-.growth-card { border-radius: 22px; padding: 16px 18px; box-shadow: 0 18px 34px -18px var(--accent-fill, var(--blue)); }
+.growth-card { border-radius: 16px; padding: 16px 18px; box-shadow: 0 18px 34px -18px var(--accent-fill, var(--blue)); }
 
-.verse-box { position: relative; overflow: hidden; border-radius: 24px; padding: 22px 22px 18px; border-color: rgba(232, 181, 74, 0.3); background: radial-gradient(130% 120% at 100% 0%, rgba(232, 181, 74, 0.2), transparent 58%), var(--card-bg); box-shadow: var(--card-shadow); }
+.verse-box { position: relative; overflow: hidden; border-radius: 16px; padding: 22px 22px 18px; border-color: rgba(232, 181, 74, 0.3); background: radial-gradient(130% 120% at 100% 0%, rgba(232, 181, 74, 0.2), transparent 58%), var(--card-bg); box-shadow: var(--card-shadow); }
 .verse-box::before { content: "\201C"; position: absolute; top: -8px; right: 18px; font: 700 112px/1 Georgia, "Times New Roman", serif; color: rgba(232, 181, 74, 0.24); pointer-events: none; }
 .verse-box .eyebrow { font-size: 11px; letter-spacing: 0.14em; }
 .verse-box p { position: relative; font-family: Georgia, "Times New Roman", serif; font-size: 17px; line-height: 1.6; }
@@ -2863,13 +2867,13 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px s
 .devotion-card::before { content: ""; position: absolute; left: 0; top: 18px; bottom: 18px; width: 4px; border-radius: 0 4px 4px 0; background: var(--accent-text, var(--blue)); }
 .devotion-card h3 { font-size: 18px; letter-spacing: -0.015em; margin: 0 0 8px; }
 
-.sermon-thumb { isolation: isolate; aspect-ratio: 4 / 3; border-radius: 20px; box-shadow: var(--card-shadow); }
+.sermon-thumb { isolation: isolate; aspect-ratio: 4 / 3; border-radius: 14px; box-shadow: var(--card-shadow); }
 .sermon-thumb::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 42%, rgba(0, 0, 0, 0.5)); pointer-events: none; }
 .sermon-playicon { z-index: 1; width: 46px; height: 46px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.34); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .sermon-duration { z-index: 1; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .sermon-title { font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; }
 
-.date-badge { flex: none; width: 52px; height: 58px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1; background: var(--accent-soft); color: var(--accent-text, var(--blue)); }
+.date-badge { flex: none; width: 52px; height: 58px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1; background: var(--accent-soft); color: var(--accent-text, var(--blue)); }
 .date-badge span { font-size: 10.5px; font-weight: 800; letter-spacing: 0.1em; }
 .date-badge b { font-size: 21px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
 .event-main { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; color: inherit; text-decoration: none; }
@@ -2878,9 +2882,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px s
 .e-title { font-size: 15.5px; font-weight: 700; letter-spacing: -0.01em; }
 .e-sub { color: var(--text-dim); font-size: 13px; }
 
-.conference-banner { border-radius: 28px; padding: 22px; box-shadow: 0 20px 38px -20px rgba(47, 139, 255, 0.75); }
-.quick-giving-card { border-radius: 24px; padding: 20px; box-shadow: var(--card-shadow); }
-.announcement-icon { flex: none; width: 38px; height: 38px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent-text, var(--blue)); }
+.conference-banner { border-radius: 20px; padding: 22px; box-shadow: 0 20px 38px -20px rgba(47, 139, 255, 0.75); }
+.quick-giving-card { border-radius: 16px; padding: 20px; box-shadow: var(--card-shadow); }
+.announcement-icon { flex: none; width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent-text, var(--blue)); }
 .ministry-chip { background: var(--card-bg); box-shadow: var(--card-shadow); font-weight: 700; }
 
 /* -- Growth Groups: the location card's buttons never wrap, and the bible's arrows stay out of the way -- */

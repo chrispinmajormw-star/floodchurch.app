@@ -7,7 +7,8 @@ import { supabase } from "../supabaseClient.js";
 import { ensureApplyModal, wireApplyRows } from "../simple-list.js";
 
 const LIST_ROWS = [
-  { key: "giving", title: "Giving history", icon: "heart", href: "giving-history.html" },
+  { key: "give", title: "Give", icon: "heart", href: "give.html" },
+  { key: "giving", title: "Giving history", icon: "receipt", href: "giving-history.html" },
   { key: "prayer", title: "Prayer requests", icon: "pray", href: "prayer.html" },
   { key: "sermons", title: "Saved sermons", icon: "bookmark", href: "saved-sermons.html" },
   { key: "downloads", title: "Downloads", icon: "downloads", href: "downloads.html" },

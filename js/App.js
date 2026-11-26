@@ -11,7 +11,6 @@ const NAV_ITEMS = [
   { href: "index.html", label: "Home", icon: "home" },
   { href: "bible.html", label: "Bible", icon: "book" },
   { href: "media.html", label: "Media", icon: "play" },
-  { href: "give.html", label: "Give", icon: "heart" },
   { href: "profile.html", label: "Profile", icon: "user" },
 ];
 
